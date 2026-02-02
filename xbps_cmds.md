@@ -1,0 +1,95 @@
+# XBPS Commands and notes
+
+## Update system
+```sh
+sudo xbps-install -Syu
+```
+
+## Install package
+```sh
+sudo xbps-install package_name
+```
+
+## Install non free repo
+```sh
+sudo xbps-install -Rsy void-repo-nonfree
+```
+
+## Reinstall package
+```sh
+sudo xbps-install -f package_name
+```
+
+## Check all dependencies
+```sh
+sudo xbps-install -nu
+```
+
+## Remove package and all dependencies and config
+```sh
+sudo xbps-remove -R package_name
+```
+
+## Remove unused packages
+```sh
+sudo xbps-remove -o
+```
+
+## Remove unused packages and clean
+```sh
+sudo xbps-remove -Oo
+```
+
+## Search local package 
+```sh
+sudo xbps-query -s package_name
+```
+
+## Search remote package 
+```sh
+sudo xbps-query -Rs package_name
+```
+
+## Show package info
+```sh
+xbps-query -S package_name
+```
+
+## Show which packages are manually installed
+```sh
+xbps-query -m
+```
+
+## Show file inside a package
+```sh
+xbps-query -f package_name
+```
+
+## Show which package the file is contained in
+```sh
+xbps-query -o /path/of/file
+```
+
+## Check system consistency
+```sh
+xbps-pkgdb -a
+```
+
+## Reinstall damaged package
+```sh
+xbps-pkgdb -m repolock package_name
+xbps-install -f package_name
+```
+
+## Regenerate system config
+```sh
+xbps-reconfigure -fa
+```
+
+## Regenerate package
+```sh
+xbps-reconfigure -f package_name
+```
+
+
+Many thanks to the [person](https://www.youtube.com/@YouTuxChannel) who encouraged me to install Void Linux and to make this guide starting from one of its contents [Super Mega Ultra Guide to Void Linux](https://www.youtube.com/watch?v=xieN8GWh_QE&list=WL&index=8)

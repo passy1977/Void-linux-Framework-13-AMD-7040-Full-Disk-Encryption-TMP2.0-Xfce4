@@ -262,14 +262,72 @@ ln -s /etc/sv/crond /var/service
 ln -s /etc/sv/dbus /var/service
 ln -s /etc/sv/elogind /var/service
 ln -s /etc/sv/nanoklogd /var/service
+ln -s /etc/sv/socklog-unix/ /var/service
 ln -s /etc/sv/ntpd /var/service
 ln -s /etc/sv/polkitd /var/service
 ln -s /etc/sv/power-profiles-daemon /var/service
-ln -s /etc/sv/rsyslogd /var/service
 ln -s /etc/sv/rtkit /var/service
 ln -s /etc/sv/smartd  /var/service
 ln -s /etc/sv/udevd  /var/service
 ln -s /etc/sv/ufw  /var/service
+```
+
+### USB Disk defaulf mount
+```sh
+mcedit /etc/udev/rules.d/99-udisks2.rules
+```
+insert:  
+    ENV{ID_FS_USAGE}=="filesystem|other|crypto", ENV{UDISKS_FILESYSTEM_SHARED}="1"
+
+
+### Enable zram
+```sh
+mcedit /etc/udev/rules.d/99-zram.rules
+```
+insert:  
+    ACTION=="add", KERNEL=="zram0", ATTR{initstate}=="0", ATTR{comp_algorithm}="zstd", ATTR{disksize}="4G"
+
+```sh
+mcedit /etc/sysctl.conf
+```
+add:  
+    vm.swappiness=100
+    vm.page-cluster=0
+
+```sh
+mcedit /etc/rc.local
+```
+add:  
+    if [ ! -e /dev/zram0 ]; then
+        echo "Initialize zram"
+        modprobe zram
+        echo 4G > /sys/block/zram0/disksize
+        echo zstd > /sys/block/zram0/comp_algorithm
+        mkswap /dev/zram0
+        swapon --priority 100 /dev/zram0
+    else
+        # Se esiste ma non è attivo, resetta e ricrea
+        if ! swapon --show | grep -q /dev/zram0; then
+        echo "Configure zram"
+            swapoff /dev/zram0 2>/dev/null
+            mkswap /dev/zram0
+            swapon --priority 100 /dev/zram0
+        fi
+    fi
+
+
+
+
+### FSTrim nvme
+```sh
+mcedit /etc/cron.weekly/fstrim
+```
+insert:  
+    #!/bin/bash  
+    fstrim / 2>/dev/null || true
+
+```sh
+chmod +x /etc/cron.weekly/fstrim
 ```
 
 ### Install system notification error
@@ -331,12 +389,20 @@ add:
     ignorepkg=tumbler  
 
 ```sh
-xbps-install vulkan-loader amdvlk mesa-vaapi mesa-vdpau xorg-minimal xf86-video-amdgpu xterm xorg-fonts xfce4 catfish xfce-polkit xfce4-pulseaudio-plugin xfce4-whiskermenu-plugin pavucontrol pulseaudio gvfs-smb lightdm lightdm-gtk3-greeter 
+xbps-install vulkan-loader amdvlk mesa-vaapi mesa-vdpau xorg-minimal xf86-video-amdgpu xterm xorg-fonts xfce4 catfish xfce-polkit xfce4-pulseaudio-plugin xfce4-whiskermenu-plugin pavucontrol pulseaudio gvfs-smb lightdm lightdm-gtk3-greeter xdg-desktop-portal-gtk 
+```
+
+### Install Flatpak
+```sh
+xbps-install flatpak
+sudo flatpak remote-add --if-not-exists --system flathub https://flathub.org/repo/flathub.flatpakrepo
 ```
 
 #### Install fprintd
 ```sh
 xbps-install fprintd
+fprintd-enroll johndoe
+fprintd-enroll johndoe -f left-index-finger 
 ```
 Insert a row after #@include common-auth or at the beginning of the auth section:  
     auth	   sufficient pam_fprintd.so
