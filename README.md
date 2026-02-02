@@ -298,22 +298,22 @@ add:
 mcedit /etc/rc.local
 ```
 add:  
-    if [ ! -e /dev/zram0 ]; then
-        echo "Initialize zram"
-        modprobe zram
-        echo 4G > /sys/block/zram0/disksize
-        echo zstd > /sys/block/zram0/comp_algorithm
-        mkswap /dev/zram0
-        swapon --priority 100 /dev/zram0
-    else
-        # Se esiste ma non è attivo, resetta e ricrea
-        if ! swapon --show | grep -q /dev/zram0; then
-        echo "Configure zram"
-            swapoff /dev/zram0 2>/dev/null
-            mkswap /dev/zram0
-            swapon --priority 100 /dev/zram0
-        fi
-    fi
+    if [ ! -e /dev/zram0 ]; then  
+        echo "Initialize zram"  
+        modprobe zram  
+        echo 4G > /sys/block/zram0/disksize  
+        echo zstd > /sys/block/zram0/comp_algorithm  
+        mkswap /dev/zram0  
+        swapon --priority 100 /dev/zram0  
+    else  
+        # Se esiste ma non è attivo, resetta e ricrea  
+        if ! swapon --show | grep -q /dev/zram0; then  
+        echo "Configure zram"  
+            swapoff /dev/zram0 2>/dev/null  
+            mkswap /dev/zram0  
+            swapon --priority 100 /dev/zram0  
+        fi  
+    fi  
 
 
 
