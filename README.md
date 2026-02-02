@@ -298,6 +298,7 @@ add:
 mcedit /etc/rc.local
 ```
 add:  
+```sh
     if [ ! -e /dev/zram0 ]; then  
         echo "Initialize zram"  
         modprobe zram  
@@ -314,7 +315,7 @@ add:
             swapon --priority 100 /dev/zram0  
         fi  
     fi  
-
+```
 
 
 
