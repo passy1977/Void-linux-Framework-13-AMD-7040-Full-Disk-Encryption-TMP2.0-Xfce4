@@ -2,16 +2,16 @@
 
 ## Hardware
 * Framework 13 
-* AMD Ryzen 7 AMD Ryzen 7 7840
+* AMD Ryzen 7 7840U
 * 16GB RAM
 * 1Tb SSD
 * Dongle usb-c with ETH
 
 ## Preparation
 
-Boot up [Arch Linux ISO](https://archlinux.org/download/) and do the following:
+Boot up [Void Linux ISO](https://voidlinux.org/download/) and do the following:
 > [!WARNING]  
-> Downdload iso live with XFCE4 
+> Download iso live with XFCE4 
 
 ## Configuration file
 All configuration and file modified are in src folder
@@ -74,18 +74,18 @@ To set the first EFI partition when fdisk is still open:
  - 1
  - w
 
-### Format EFI partiton
+### Format EFI partition
 ```sh
-mkfs.fat -F32 -n BOOT /dev/nvme0n1
+mkfs.fat -F32 -n BOOT /dev/nvme0n1p1
 ```
-### Encrypt and format root partiton
+### Encrypt and format root partition
 ```sh
 cryptsetup luksFormat -h sha256 /dev/nvme0n1p2
 cryptsetup open /dev/nvme0n1p2 root
 mkfs.ext4 -L root /dev/mapper/root
 ```
 
-### Encrypt and format home partiton
+### Encrypt and format home partition
 ```sh
 cryptsetup luksFormat -h sha256 /dev/nvme0n1p3
 cryptsetup open /dev/nvme0n1p3 home
@@ -96,7 +96,7 @@ mkfs.ext4 -L home /dev/mapper/home
 ```sh
 mount /dev/mapper/root /mnt
 mkdir /mnt/{boot,home}
-mount /dev/nvme0n1 /mnt/boot
+mount /dev/nvme0n1p1 /mnt/boot
 mount /dev/mapper/home /mnt/home
 ```
 
@@ -108,7 +108,7 @@ cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
 ### Install minimal system
 ```sh
-xbps-install -Sy -R https://repo-default.voidlinux.org/current -r /mnt base-container linux-mainline linux-mainline-headers  linux-firmware-broadcom bash linux-firmware-amd linux-firmware-network mc vim cpio kpartx kmod eudev ncurses kbd NetworkManager sudo dbus cryptsetup iputils exfatprogs e2fsprogs hwinfo grub-x86_64-efi
+xbps-install -Sy -R https://repo-default.voidlinux.org/current -r /mnt base-container linux-mainline linux-mainline-headers linux-firmware-broadcom bash linux-firmware-amd linux-firmware-network mc vim cpio kpartx kmod eudev ncurses kbd NetworkManager sudo dbus cryptsetup iputils exfatprogs e2fsprogs hwinfo grub-x86_64-efi
 ```
 
 ### Create fstab
@@ -147,12 +147,15 @@ echo "LANG=en_GB.UTF-8" > /etc/locale.conf
 echo "en_US.UTF-8 UTF-8" >> /etc/default/libc-locales
 
 ```
-if you need some more complex cofiguration see [src/etc/locale.conf](src/etc/locale.conf)
+if you need some more complex configuration see [src/etc/locale.conf](src/etc/locale.conf)
+
+```sh
 xbps-reconfigure -f glibc-locales
+```
 
 ### Add user
 ```sh
-useradd -mG wheel lp audio,video,optical,storage,dbus,input,plugdev,polkitd johndoe
+useradd -mG wheel,lp,audio,video,optical,storage,dbus,input,plugdev,polkitd johndoe
 passwd johndoe
 ```
 
@@ -162,7 +165,7 @@ mcedit /etc/sudoers.d/johndoe
 add:  
     johndoe	ALL=(ALL:ALL) ALL
 
-### Configure reginal variable
+### Configure regional variable
 ```sh
 mcedit /etc/rc.conf
 ```
@@ -206,10 +209,11 @@ mcedit /etc/NetworkManager/NetworkManager.conf
 add: 
     [main]  
     plugins=keyfile  
-    nrc-manager=resolvconf  
+    dns=default  
+    rc-manager=resolvconf  
 
 ```sh
-ln -s /etc/sv/bluetoothd /var/service
+ln -s /etc/sv/NetworkManager /var/service
 ```
 
 ### Configure grub
@@ -239,7 +243,7 @@ xbps-reconfigure -fa
 ## Try to reboot!!!
 And login as root
 
-### Remode unused firmware
+### Remove unused firmware
 ```sh
 mcedit /etc/xbps.d/linux-firmware.conf
 ```
@@ -247,14 +251,14 @@ add:
     ignorepkg=linux-firmware-intel  
     ignorepkg=linux-firmware-nvidia  
 ```sh
-xbps-remove -Rf ignorepkg=linux-firmware-intel 
-xbps-remove -Rf ignorepkg=linux-firmware-nvidia  
+xbps-remove -Ry linux-firmware-intel 
+xbps-remove -Ry linux-firmware-nvidia  
 ```
 
 ### Install and enable base services 
 ```sh 
 xbps-install -Su 
-xbps-install logrotate cronie uwf smartmontools power-profiles-daemon polkit openntpd elogind dbus rsyslog
+xbps-install logrotate cronie ufw smartmontools power-profiles-daemon polkit openntpd elogind dbus rsyslog
 ln -s /etc/sv/crond /var/service
 ln -s /etc/sv/dbus /var/service
 ln -s /etc/sv/elogind /var/service
@@ -295,14 +299,14 @@ mcedit /usr/local/bin/smartdnotify
 insert:  
     #!/bin/sh
 
-    sudo -u antoniosalsi DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus notify-send "S.M.A.R.T Error ($SMARTD_FAILTYPE)" "$SMARTD_MESSAGE" --icon=dialog-warning -u critical
+    sudo -u johndoe DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus notify-send "S.M.A.R.T Error ($SMARTD_FAILTYPE)" "$SMARTD_MESSAGE" --icon=dialog-warning -u critical
 
 ```sh
 chmod o+x /usr/local/bin/smartdnotify
 ```
 
 ```sh
-mcedit /usr/local/bin/smartdnotify
+mcedit /etc/smartd/smartd.conf
 ```
 insert at the end:  
     DEVICESCAN -H -l error -l selftest -m root -M exec /usr/local/bin/smartdnotify
@@ -316,7 +320,7 @@ ln -s /etc/sv/bluetoothd /var/service
 ```
 
 ### Install XFCE4 
-```
+```sh
 mcedit /etc/xbps.d/xfce4.conf 
 ```
 add:  
@@ -328,14 +332,14 @@ add:
     ignorepkg=tumbler  
 
 ```sh
-xbps-install vulcan-loader amdvlk mesa-vaapi mesa-vdpau xorg-minimal xf86-video-amdgpu xterm xorg-fonts xfce4 catfish xfce-polkit xfce4-alsa-plugin xfce4-whiskermenu-plugin pavucontrol pulseaudio gvfs-smb lightdm lightdm-gtk3-greeter 
+xbps-install vulkan-loader amdvlk mesa-vaapi mesa-vdpau xorg-minimal xf86-video-amdgpu xterm xorg-fonts xfce4 catfish xfce-polkit xfce4-pulseaudio-plugin xfce4-whiskermenu-plugin pavucontrol pulseaudio gvfs-smb lightdm lightdm-gtk3-greeter 
 ```
 
 #### Install fprintd
 ```sh
 xbps-install fprintd
 ```
-insert after a row after #@PAM-1.0:  
+Insert a row after #@include common-auth or at the beginning of the auth section:  
     auth	   sufficient pam_fprintd.so
 for this files:
 * /etc/pam.d/lightdm
@@ -343,8 +347,8 @@ for this files:
 * /etc/pam.d/system-login
 
 ## Enable TPM2
-If you want enable decrypt from TPM2 follow this [TPM2-Documentation.md] remember delete /boot/volume.key 
+If you want to enable decrypt from TPM2 follow this [TPM2-Documentation.md](TPM2-Documentation.md) and remember to delete /boot/volume.key 
 
-## Resurces
-All file modded are in src foldr of this project.
+## Resources
+All modified files are in the src folder of this project.
 
