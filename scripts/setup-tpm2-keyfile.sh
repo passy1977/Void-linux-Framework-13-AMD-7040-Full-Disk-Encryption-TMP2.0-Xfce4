@@ -22,8 +22,8 @@ echo ""
 
 # Configurazione
 TPM2_DIR="/usr/local/etc/tpm2"
-ROOT_UUID="<UUID_ROOT_PARTITION>"
-HOME_UUID="<UUID_HOME_PARTITION>"
+ROOT_UUID="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+HOME_UUID="yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
 ROOT_DEV="/dev/nvme0n1p2"
 HOME_DEV="/dev/nvme0n1p3"
 
@@ -193,13 +193,13 @@ log_info "Starting LUKS unlock with TPM2"
 sleep 1
 
 # Unlock root
-if ! unseal_and_unlock "root" "<UUID_ROOT_PARTITION>"; then
+if ! unseal_and_unlock "root" "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"; then
     log_error "Fallback to manual password for root"
     exit 1
 fi
 
 # Unlock home
-if ! unseal_and_unlock "home" "<UUID_HOME_PARTITION>"; then
+if ! unseal_and_unlock "home" "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"; then
     log_error "Fallback to manual password for home"
     # Don't exit, home might not be critical
 fi
@@ -297,8 +297,8 @@ add_dracutmodules+=" crypt tpm2-keyfile "
 
 # Kernel parameters
 kernel_cmdline+=" rd.luks=1 "
-kernel_cmdline+=" rd.luks.uuid=<UUID_ROOT_PARTITION> "
-kernel_cmdline+=" rd.luks.uuid=<UUID_HOME_PARTITION> "
+kernel_cmdline+=" rd.luks.uuid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx "
+kernel_cmdline+=" rd.luks.uuid=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy "
 
 # Debug (uncomment if needed)
 #kernel_cmdline+=" rd.debug rd.shell "
@@ -311,8 +311,8 @@ cat > /etc/crypttab << 'CRYPTTAB'
 # crypttab: encrypted partitions
 # TPM2 keyfile automatic unlock in initramfs
 
-root UUID=<UUID_ROOT_PARTITION> none luks,discard
-home UUID=<UUID_HOME_PARTITION> none luks,discard
+root UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx none luks,discard
+home UUID=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy none luks,discard
 CRYPTTAB
 
 echo -e "${BLUE}✓ Crypttab updated${NC}"

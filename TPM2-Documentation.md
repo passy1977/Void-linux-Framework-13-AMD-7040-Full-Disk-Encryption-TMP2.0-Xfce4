@@ -318,8 +318,8 @@ fi
 # crypttab: encrypted partitions
 # TPM2 automatic unlock in initramfs
 
-root UUID=<UUID_ROOT_PARTITION> none luks,discard
-home UUID=<UUID_HOME_PARTITION> none luks,discard
+root UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx none luks,discard
+home UUID=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy none luks,discard
 ```
 
 **Important**: No keyfile specified (third field is `none`). The unlock happens in initramfs hook.
@@ -333,8 +333,8 @@ add_dracutmodules+=" crypt tpm2-keyfile "
 
 # Kernel parameters for LUKS
 kernel_cmdline+=" rd.luks=1 "
-kernel_cmdline+=" rd.luks.uuid=<UUID_ROOT_PARTITION> "
-kernel_cmdline+=" rd.luks.uuid=<UUID_HOME_PARTITION> "
+kernel_cmdline+=" rd.luks.uuid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx "
+kernel_cmdline+=" rd.luks.uuid=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy "
 
 # Debug (uncomment if needed)
 #kernel_cmdline+=" rd.debug rd.shell "
@@ -725,14 +725,14 @@ sudo cat > /etc/dracut.conf.d/10-crypt.conf << 'EOF'
 add_drivers+=" dm_crypt "
 add_dracutmodules+=" crypt "
 kernel_cmdline+=" rd.luks=1 "
-kernel_cmdline+=" rd.luks.uuid=<UUID_ROOT_PARTITION> "
-kernel_cmdline+=" rd.luks.uuid=<UUID_HOME_PARTITION> "
+kernel_cmdline+=" rd.luks.uuid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx "
+kernel_cmdline+=" rd.luks.uuid=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy "
 EOF
 
 # Update crypttab
 sudo cat > /etc/crypttab << 'EOF'
-root UUID=<UUID_ROOT_PARTITION> none luks,discard
-home UUID=<UUID_HOME_PARTITION> none luks,discard
+root UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx none luks,discard
+home UUID=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy none luks,discard
 EOF
 
 # Regenerate initramfs

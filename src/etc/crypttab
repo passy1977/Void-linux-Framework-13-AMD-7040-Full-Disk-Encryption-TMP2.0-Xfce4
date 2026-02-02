@@ -1,5 +1,5 @@
 # crypttab: encrypted partitions
 # TPM2 keyfile unlock automatico in initramfs
 
-root UUID=<UUID_ROOT_PARTITION> none luks,discard
-home UUID=<UUID_HOME_PARTITION> none luks,discard
+root UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx none luks,discard
+home UUID=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy none luks,discard

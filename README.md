@@ -186,11 +186,10 @@ cryptsetup luksAddKey /dev/nvme0n1p3 /boot/volume.key
 blkid -s UUID -o value /dev/nvme0n1p2
 blkid -s UUID -o value /dev/nvme0n1p3
 ```
-from now the value returned from /dev/nvme0n1p2 will be <UUID_ROOT_PARTITION>  
-from now the value returned from /dev/nvme0n1p3 will be <UUID_HOME_PARTITION>  
+from now the value returned from /dev/nvme0n1p2 will be xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx  
+from now the value returned from /dev/nvme0n1p3 will be yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy 
 
 example:
-
 UUID_ROOT_PARTITION=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx  
 UUID_HOME_PARTITION=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
 
@@ -221,7 +220,7 @@ ln -s /etc/sv/NetworkManager /var/service
 mcedit /etc/default/grub
 ```
 modify:  
-    GRUB_CMDLINE_LINUX_DEFAULT="rd.luks.uuid=<UUID_ROOT_PARTITION> root=/dev/mapper/root  rd.luks.uuid=<UUID_HOME_PARTITION> home=/dev/mapper/home lsm=landlock,lockdown,yama,integrity,apparmor,bpf acpi_osi=\"!Windows 2000\" amdgpu.sg_display=0 nowatchdog net.ifnames=0 apparmor=1 security=apparmor rd.luks.allow=discards rw quiet rd.vconsole.keymap=it rd.retry=10"
+    GRUB_CMDLINE_LINUX_DEFAULT="rd.luks.uuid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx root=/dev/mapper/root  rd.luks.uuid=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy home=/dev/mapper/home lsm=landlock,lockdown,yama,integrity,apparmor,bpf acpi_osi=\"!Windows 2000\" amdgpu.sg_display=0 nowatchdog net.ifnames=0 apparmor=1 security=apparmor rd.luks.allow=discards rw quiet rd.vconsole.keymap=it rd.retry=10"
 
 ### Configure dracut
 ```sh
