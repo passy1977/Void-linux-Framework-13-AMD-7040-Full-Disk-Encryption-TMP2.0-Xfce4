@@ -336,6 +336,7 @@ chmod +x /etc/cron.weekly/fstrim
 mcedit /usr/local/bin/sendmail-fake.sh
 ```
 insert:  
+```sh
     #!/bin/bash
     # /usr/local/bin/sendmail-fake.sh
 
@@ -344,6 +345,7 @@ insert:
     notify-send -t 5000 "Sendmail message" "$MESSAGE" --icon=dialog-information
 
     exit 0
+```
 
 ```sh
 chmod o+x /usr/local/bin/sendmail-fake.sh
@@ -355,9 +357,11 @@ ln -s /usr/local/bin/sendmail-fake.sh /usr/bin/sendmail
 mcedit /usr/local/bin/smartdnotify
 ```
 insert:  
+```sh
     #!/bin/sh
 
     sudo -u johndoe DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus notify-send "S.M.A.R.T Error ($SMARTD_FAILTYPE)" "$SMARTD_MESSAGE" --icon=dialog-warning -u critical
+```
 
 ```sh
 chmod o+x /usr/local/bin/smartdnotify
