@@ -242,6 +242,11 @@ xbps-reconfigure -fa
 ## Try to reboot!!!
 And login as root
 
+### Add locale repository
+```sh
+echo 'repository=https://voidlinux.mirror.garr.it/current' > /etc/xbps.d/10-repository-main.conf
+```
+
 ### Remove unused firmware
 ```sh
 mcedit /etc/xbps.d/linux-firmware.conf
