@@ -374,6 +374,24 @@ insert at the end:
     DEVICESCAN -H -l error -l selftest -m root -M exec /usr/local/bin/smartdnotify
 
 
+### Configure hibernation
+```sh 
+filefrag -v /var/swap.img
+```
+in the index 0 of ext: label get physical_offset: value in my case  
+
+sudo filefrag -v /var/swap.img  
+Place your finger on the fingerprint reader
+Filesystem type is: ef53  
+File size of /var/swap.img is 17179869184 (4194304 blocks of 4096 bytes)  
+ ext:     logical_offset:        physical_offset: length:   expected: flags:  
+   0:        0..       0:      __43008__..     43008:      1:            
+
+```sh
+mcedit /set/default/grub
+```
+add in tail of GRUB_CMDLINE_LINUX_DEFAULT="... resume=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx resume_offset=43008"
+
 
 ### Install bluetooth
 ```sh
@@ -403,7 +421,7 @@ xbps-install flatpak
 sudo flatpak remote-add --if-not-exists --system flathub https://flathub.org/repo/flathub.flatpakrepo
 ```
 
-#### Install fprintd
+### Install fprintd
 ```sh
 xbps-install fprintd
 fprintd-enroll johndoe
@@ -416,24 +434,7 @@ for this files:
 * /etc/pam.d/system-auth
 * /etc/pam.d/system-login
 
-##### Configure hibernation
-```sh 
-filefrag -v /var/swap.img
-```
-in the indexo 0 of ext: label get physical_offset: value in my case  
-sudo filefrag -v /var/swap.img
-Place your finger on the fingerprint reader
-Filesystem type is: ef53
-File size of /var/swap.img is 17179869184 (4194304 blocks of 4096 bytes)
- ext:     logical_offset:        physical_offset: length:   expected: flags:
-   0:        0..       0:      __43008__..     43008:      1:            
-
-```sh
-mcedit /set/default/grub
-```
-add in tail of GRUB_CMDLINE_LINUX_DEFAULT="... resume=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx resume_offset=43008"
-
-## Enable TPM2
+### Enable TPM2
 If you want to enable decrypt from TPM2 follow this [TPM2-Documentation.md](TPM2-Documentation.md) and remember to delete /boot/volume.key 
 
 ## Resources
