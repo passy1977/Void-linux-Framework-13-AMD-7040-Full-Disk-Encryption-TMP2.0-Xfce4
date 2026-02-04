@@ -42,12 +42,12 @@ sudo xbps-remove -Oo
 
 ## Search local package 
 ```sh
-sudo xbps-query -s package_name
+xbps-query -s package_name
 ```
 
 ## Search remote package 
 ```sh
-sudo xbps-query -Rs package_name
+xbps-query -Rs package_name
 ```
 
 ## Show package info
@@ -77,19 +77,23 @@ xbps-pkgdb -a
 
 ## Reinstall damaged package
 ```sh
-xbps-pkgdb -m repolock package_name
-xbps-install -f package_name
+sudo xbps-pkgdb -m repolock package_name
+sudo xbps-install -f package_name
 ```
 
 ## Regenerate system config
 ```sh
-xbps-reconfigure -fa
+sudo xbps-reconfigure -fa
 ```
 
 ## Regenerate package
 ```sh
-xbps-reconfigure -f package_name
+sudo xbps-reconfigure -f package_name
 ```
 
+## Add reporisotry
+```sh
+echo 'repository=https://voidlinux.mirror.garr.it/current' > /etc/xbps.d/10-repository-main.conf
+```
 
 Many thanks to the [person](https://www.youtube.com/@YouTuxChannel) who encouraged me to install Void Linux and to make this guide starting from one of its contents [Super Mega Ultra Guide to Void Linux](https://www.youtube.com/watch?v=xieN8GWh_QE&list=WL&index=8)
