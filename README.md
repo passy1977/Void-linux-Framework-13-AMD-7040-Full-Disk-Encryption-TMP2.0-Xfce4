@@ -260,12 +260,12 @@ xbps-remove -Ry linux-firmware-nvidia
 ```
 
 ### Install and enable base services 
+elogin don't need to be linked to /var/service because it start with pid 1
 ```sh 
 xbps-install -Su 
 xbps-install logrotate cronie ufw smartmontools power-profiles-daemon polkit openntpd elogind dbus apparmor
 ln -s /etc/sv/crond /var/service
 ln -s /etc/sv/dbus /var/service
-ln -s /etc/sv/elogind /var/service
 ln -s /etc/sv/nanoklogd /var/service
 ln -s /etc/sv/socklog-unix/ /var/service
 ln -s /etc/sv/ntpd /var/service
