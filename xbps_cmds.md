@@ -50,9 +50,14 @@ xbps-query -s package_name
 xbps-query -Rs package_name
 ```
 
-## Show package info
+## Show local package info
 ```sh
 xbps-query -S package_name
+```
+
+## Show remote package info
+```sh
+xbps-query -RS package_name
 ```
 
 ## Show which packages are manually installed

@@ -220,7 +220,7 @@ ln -s /etc/sv/NetworkManager /var/service
 mcedit /etc/default/grub
 ```
 modify:  
-    GRUB_CMDLINE_LINUX_DEFAULT="rd.luks.uuid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx root=/dev/mapper/root  rd.luks.uuid=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy home=/dev/mapper/home lsm=landlock,lockdown,yama,integrity,apparmor,bpf acpi_osi=\"!Windows 2000\" amdgpu.sg_display=0 nowatchdog net.ifnames=0 apparmor=1 security=apparmor rd.luks.allow=discards rw quiet rd.vconsole.keymap=it rd.retry=10"
+    GRUB_CMDLINE_LINUX_DEFAULT="rd.luks.uuid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx root=/dev/mapper/root  rd.luks.uuid=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy home=/dev/mapper/home lsm=landlock,lockdown,yama,integrity,apparmor,bpf acpi_osi=\"!Windows 2000\" amdgpu.sg_display=0 nowatchdog net.ifnames=0 apparmor=1 security=apparmor rd.luks.allow=discard rw quiet rd.vconsole.keymap=it rd.retry=10"
 
 ### Configure dracut
 ```sh
