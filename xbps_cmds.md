@@ -96,6 +96,11 @@ sudo xbps-reconfigure -fa
 sudo xbps-reconfigure -f package_name
 ```
 
+## Remove old kernel
+```sh
+sudo vkpurge rm all 
+```
+
 ## Add reporisotry
 ```sh
 echo 'repository=https://voidlinux.mirror.garr.it/current' > /etc/xbps.d/10-repository-main.conf
