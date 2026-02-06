@@ -177,7 +177,7 @@ unseal_and_unlock() {
     # Unseal keyfile
     log_info "Unsealing keyfile for $name..."
     if ! tpm2_unseal -c "$ctx_file" -p pcr:$PCR_SELECTION 2>/dev/null | \
-         cryptsetup open --type luks "$device" "$name" 2>/dev/null; then
+         cryptsetup open --allow-discards --type luks "$device" "$name" 2>/dev/null; then
         log_error "Unable to unlock $name with TPM2"
         return 1
     fi
@@ -302,6 +302,7 @@ kernel_cmdline+=" rd.luks.uuid=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy "
 
 # Debug (uncomment if needed)
 #kernel_cmdline+=" rd.debug rd.shell "
+kernel_cmdline+=" rd.luks.allow-discards "
 DRACUT_CONF
 
 echo -e "${BLUE}✓ Dracut configured${NC}"

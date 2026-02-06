@@ -229,6 +229,7 @@ mcedit /etc/dracut.conf.d/10-crypt.conf
 add:  
     install_items+=" /boot/volume.key /etc/crypttab "
 	add_dracutmodules+=" crypt "
+    kernel_cmdline+=" rd.luks.allow-discards "
 
 ### Finalize
 ```sh
@@ -331,6 +332,8 @@ mcedit /etc/cron.weekly/fstrim
 insert:  
     #!/bin/bash  
     fstrim / 2>/dev/null || true
+    fstrim /boot 2>/dev/null || true
+    fstrim /home 2>/dev/null || true
 
 ```sh
 chmod +x /etc/cron.weekly/fstrim
