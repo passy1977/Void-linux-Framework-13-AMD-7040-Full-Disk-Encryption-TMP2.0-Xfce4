@@ -442,6 +442,28 @@ for this files:
 * /etc/pam.d/system-auth
 * /etc/pam.d/system-login
 
+### FIX apparmor="ALLOWED" operation="sendmsg" class="net" info="failed af match" error=-13 profile="pulseaudio" pid=2020 comm="bluetooth" family="bluetooth" sock_type="seqpacket" protocol=0 requested_mask="send" denied_mask="send"
+```sh
+mcedit /etc/apparmor.d/usr.bin.pulseaudio
+```
+alter some _include<...>_  
+add _network bluetooth,_  
+something like that:
+```sh
+  ...
+  include <abstractions/base>
+  include <abstractions/audio>
+  include <abstractions/dbus-session>
+  include <abstractions/dbus-strict>
+  include <abstractions/nameservice>
+  include <abstractions/X>
+
+  network bluetooth,
+
+  dbus send
+  ...
+```
+
 ### Enable TPM2
 If you want to enable decrypt from TPM2 follow this [TPM2-Documentation.md](TPM2-Documentation.md) and remember to delete /boot/volume.key 
 
