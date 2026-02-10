@@ -464,6 +464,20 @@ something like that:
   ...
 ```
 
+### Enable restart xorg with ctr + alt + back
+In this case I force Italian keyboard layout
+```sh
+cat /etc/X11/xorg.conf.d/00-keyboard.conf << 'EOF'
+Section "InputClass"
+    Identifier "system-keyboard"
+    MatchIsKeyboard "yes"
+    Option "XkbLayout" "it"
+    Option "XkbModel" "pc105"
+    Option "XkbOptions" "terminate:ctrl_alt_bksp"
+EndSection
+EOF
+```
+
 ### Enable TPM2
 If you want to enable decrypt from TPM2 follow this [TPM2-Documentation.md](TPM2-Documentation.md) and remember to delete /boot/volume.key 
 
