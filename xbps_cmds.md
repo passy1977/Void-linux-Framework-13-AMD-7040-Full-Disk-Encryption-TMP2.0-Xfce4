@@ -75,11 +75,6 @@ xbps-query -f package_name
 xbps-query -o /path/of/file
 ```
 
-## Check system consistency
-```sh
-xbps-pkgdb -a
-```
-
 ## Reinstall damaged package
 ```sh
 sudo xbps-pkgdb -m repolock package_name
@@ -99,6 +94,11 @@ sudo xbps-reconfigure -f package_name
 ## Remove old kernel
 ```sh
 sudo vkpurge rm all 
+```
+
+## Check system consistency
+```sh
+sudo xbps-pkgdb -a
 ```
 
 ## Add reporisotry
