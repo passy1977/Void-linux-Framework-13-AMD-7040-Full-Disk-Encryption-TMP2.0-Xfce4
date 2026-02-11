@@ -106,4 +106,19 @@ sudo xbps-pkgdb -a
 echo 'repository=https://voidlinux.mirror.garr.it/current' > /etc/xbps.d/10-repository-main.conf
 ```
 
+## Change the execution environment of a process  
+* Change the user/group the process runs under (-u, -g) 
+* Set environment variables (-e, -E) 
+* Limit resources (e.g. memory, file descriptors) 
+* Change working directory (-c) 
+* Change priority (-P, -n)
+```sh
+chpst -u www-data:www-data -c /var/www /usr/bin/php -S 0.0.0.0:8000
+```
+
+## Manage Program Alternatives and Symlinks for Multiple Tool Versions
+```sh
+xbps-alternatives --list
+```
+
 Many thanks to the [person](https://www.youtube.com/@YouTuxChannel) who encouraged me to install Void Linux and to make this guide starting from one of its contents [Super Mega Ultra Guide to Void Linux](https://www.youtube.com/watch?v=xieN8GWh_QE&list=WL&index=8)
