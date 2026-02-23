@@ -176,7 +176,7 @@ add:
 
 ### Create volume key
 ```sh
-dd bs=1 count=64 if=/dev/urandom of=/boot/volume.key
+dd bs=1 count=32 if=/dev/urandom of=/boot/volume.key
 cryptsetup luksAddKey /dev/nvme0n1p2 /boot/volume.key
 cryptsetup luksAddKey /dev/nvme0n1p3 /boot/volume.key
 ```
