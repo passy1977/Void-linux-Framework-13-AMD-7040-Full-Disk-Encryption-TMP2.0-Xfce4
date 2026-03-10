@@ -115,6 +115,11 @@ xbps-install -Sy -R https://repo-default.voidlinux.org/current -r /mnt base-cont
 ```sh
 xgenfstab /mnt > /mnt/etc/fstab
 ```
+```sh
+mcedit /etc/hosts
+```
+add to /boot options umask=0077 like this:  
+rw,discard,fmask=0022,dmask=0022,__umask=0077__,codepage=437,iocharset=iso8859-1,shortname=mixed,utf8,errors=remount-ro
 
 ## Chroot
 ```sh
