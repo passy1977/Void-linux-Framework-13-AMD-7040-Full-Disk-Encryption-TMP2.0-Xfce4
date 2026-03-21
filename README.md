@@ -16,8 +16,8 @@
 
 Boot up [Void Linux ISO](https://voidlinux.org/download/) and do the following:
 
-> \[!WARNING\]  
-Download iso live with XFCE4
+> [!WARNING]  
+> Download iso live with XFCE4 
 
 ## Configuration file
 
@@ -63,49 +63,28 @@ fdisk /dev/nvme0n1
 ```
 
 With the following sequence of characters we will obtain the desired partitioning (I assume the disk has 512 byte sectors):
-
 - Command: g
-
 - Command: n
-
 - Partition number: 
-
 - First sector: 
-
 - Last sector ...: +1G
-
 - Command: t
-
 - Partition type or alias: 1 *(set EFI type it's very important)*
-
 - Command: n
-
 - Partition number: 
-
 - First sector: 
-
 - Last sector ...: +99G
-
 - Command: n
-
 - Partition number: 
-
 - First sector: 
-
 - Last sector ...: 
-
 - Command: p (check if all partition have a right dimensioning)
-
 - Command: w
 
-To set the first EFI partition when fdisk is still open:
-
+To set the first EFI partition when fdisk is still open:  
 - t
-
 - 1
-
 - 1
-
 - w
 
 ### Format EFI partition
@@ -405,10 +384,8 @@ mcedit /etc/cron.weekly/fstrim
 
 insert:  
 \#!/bin/bash  
-fstrim / 2\>/dev/null || true 
-
-fstrim /boot 2\>/dev/null || true 
-
+fstrim / 2\>/dev/null || true   
+fstrim /boot 2\>/dev/null || true   
 fstrim /home 2\>/dev/null || true
 
 ```
@@ -522,9 +499,7 @@ Insert a row after \#@include common-auth or at the beginning of the auth sectio
 auth sufficient pam\_fprintd.so for this files:
 
 - /etc/pam.d/lightdm
-
 - /etc/pam.d/system-auth
-
 - /etc/pam.d/system-login
 
 ### FIX apparmor="ALLOWED" operation="sendmsg" class="net" info="failed af match" error=-13 profile="pulseaudio" pid=2020 comm="bluetooth" family="bluetooth" sock\_type="seqpacket" protocol=0 requested\_mask="send" denied\_mask="send"
