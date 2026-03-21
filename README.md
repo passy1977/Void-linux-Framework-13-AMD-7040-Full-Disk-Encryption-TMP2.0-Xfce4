@@ -3,13 +3,9 @@
 ## Hardware
 
 - Framework 13
-
 - AMD Ryzen 7 7840U
-
 - 16GB RAM
-
 - 1Tb SSD
-
 - Dongle usb-c with ETH
 
 ## Preparation
@@ -258,7 +254,7 @@ mcedit /etc/default/grub
 ```
 
 modify:  
-GRUB\_CMDLINE\_LINUX\_DEFAULT="rd.luks.uuid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx root=/dev/mapper/root  rd.luks.uuid=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy home=/dev/mapper/home lsm=landlock,lockdown,yama,integrity,apparmor,bpf acpi\_osi="!Windows 2000" amdgpu.sg\_display=0 nowatchdog net.ifnames=0 apparmor=1 security=apparmor rd.luks.allow=discard rw quiet rd.vconsole.keymap=it rd.retry=10"
+GRUB\_CMDLINE\_LINUX\_DEFAULT="rd.luks.uuid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx root=/dev/mapper/root  rd.luks.uuid=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy home=/dev/mapper/home lsm=landlock,lockdown,yama,integrity,apparmor,bpf acpi_osi=\"!Windows 2000\" nowatchdog net.ifnames=0 apparmor=1 security=apparmor rw quiet rd.vconsole.keymap=it rd.retry=10 rd.luks.allow-discards resume=UUID=9928617c-f1c2-4ae4-925d-d863957e7728 resume_offset=43008 zswap.enabled=1 zswap.compressor=lz4 loglevel=4"
 
 ### Configure dracut
 
@@ -343,11 +339,11 @@ insert:
 ACTION=="add", KERNEL=="zram0", ATTR\{initstate\}=="0", ATTR\{comp\_algorithm\}="zstd", ATTR\{disksize\}="4G"
 
 ```
-mcedit /etc/sysctl.conf
+mcedit /usr/local/lib/sysctl.d/99_zram.conf
 ```
 
 add:  
-vm.swappiness=100
+vm.swappiness=10
 
 vm.page-cluster=0
 
@@ -374,6 +370,42 @@ add:
             swapon --priority 100 /dev/zram0    
         fi    
     fi  
+```
+
+### Dirty pages
+
+When you write a file, data goes to a memory buffer first (dirty pages) and is flushed to disk later. These two parameters control when that flushing happens.  
+* __vm.dirty_ratio__ — maximum percentage of RAM that can contain dirty data before the kernel blocks new writes and forces a flush. Default is typically 20%.  
+* __vm.dirty_background_ratio__ — percentage at which background flushing begins quietly, without blocking applications.  
+```
+mcedit /usr/local/lib/sysctl.d/99_dirty_pages.conf
+```
+add:   
+```
+vm.dirty_ratio=10
+vm.dirty_background_ratio=5
+```
+
+### Memory mapped
+
+Maximum number of memory-mapped regions a single process is allowed to have. The default is conservative and causes silent failures in some workloads - Proton/Steam games, Elasticsearch, and large Java applications all hit this ceiling.
+```
+mcedit /usr/local/lib/sysctl.d/99_memory_mapped.conf
+```
+add:   
+```
+vm.max_map_count=262144
+```
+### Scheduled auogroup
+
+Autogroup changes how CPU time is distributed. Instead of treating every process equally, the kernel groups processes by terminal session. Each TTY session becomes a group and the scheduler gives equal time to each group — not to each individual process.
+
+```
+mcedit /usr/local/lib/sysctl.d/99_scheduled_auogroup.conf
+```
+add:   
+```
+kernel.sched_autogroup_enabled=0
 ```
 
 ### FSTrim nvme
@@ -551,3 +583,5 @@ If you want to enable decrypt from TPM2 follow this [TPM2-Documentation.md](file
 
 All modified files are in the src folder of this project.
 
+## References
+Many thanks to the [YouTuxChannel](https://www.youtube.com/@YouTuxChannel) to give me many tips to enforce my Void linux configuration [A Kernel Inside Your Kernel — Complete Technical Guide](https://youtux.org/Kernel%20Secrets.html#autogroup)
