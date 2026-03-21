@@ -132,7 +132,7 @@ xbps-install -Sy -R https://repo-default.voidlinux.org/current -r /mnt base-cont
 ```
 xgenfstab /mnt \> /mnt/etc/fstab
 
-mcedit /etc/hosts
+mcedit /etc/fstab
 ```
 
 add to /boot options umask=0077 like this:  
