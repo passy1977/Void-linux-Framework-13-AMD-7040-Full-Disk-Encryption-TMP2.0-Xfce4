@@ -329,47 +329,51 @@ mcedit /etc/udev/rules.d/99-udisks2.rules
 insert:  
 ENV\{ID\_FS\_USAGE\}=="filesystem|other|crypto", ENV\{UDISKS\_FILESYSTEM\_SHARED\}="1"
 
-### Enable zram
+### ~~Enable zram~~
 
-```
-mcedit /etc/udev/rules.d/99-zram.rules
-```
 
-insert:  
-ACTION=="add", KERNEL=="zram0", ATTR\{initstate\}=="0", ATTR\{comp\_algorithm\}="zstd", ATTR\{disksize\}="4G"
+~~mcedit /etc/udev/rules.d/99-zram.rules~~
 
-```
-mcedit /usr/local/lib/sysctl.d/99_zram.conf
-```
 
-add:  
+~~insert:~~  
+~~ACTION=="add", KERNEL=="zram0", ATTR\{initstate\}=="0", ATTR\{comp\_algorithm\}="zstd", ATTR\{disksize\}="4G"~~
+
+~~mcedit /usr/local/lib/sysctl.d/99_zram.conf~~
+
+
+~~add:~~  
+~~vm.swappiness=90~~  
+~~vm.page-cluster=0~~
+
+
+~~mcedit /etc/rc.local~~
+
+~~add:~~  
+~~echo "\033[1m=> Configure zram\033[m\n"~~  
+~~swapoff /dev/zram0 2>/dev/null~~  
+~~mkswap /dev/zram0~~  
+~~swapon --priority 100 /dev/zram0~~  
+
+
+
+### Swappiness
+```
+mcedit /usr/local/lib/sysctl.d/99_swappiness.conf
+```
+add:   
+```
 vm.swappiness=10
-
-vm.page-cluster=0
-
-```
-mcedit /etc/rc.local
+vm.page-cluster=1
 ```
 
-add:
-
+### Read ahead
+When you read a file, the kernel reads extra data beyond what you asked for assuming you will need it next. This is called read-ahead. Measured in kilobytes.  
 ```
-    if \[ ! -e /dev/zram0 \]; then    
-        echo "Initialize zram"    
-        modprobe zram    
-        echo 4G \> /sys/block/zram0/disksize    
-        echo zstd \> /sys/block/zram0/comp\_algorithm    
-        mkswap /dev/zram0    
-        swapon --priority 100 /dev/zram0    
-    else    
-        \# Se esiste ma non è attivo, resetta e ricrea    
-        if ! swapon --show | grep -q /dev/zram0; then    
-        echo "Configure zram"    
-            swapoff /dev/zram0 2\>/dev/null    
-            mkswap /dev/zram0    
-            swapon --priority 100 /dev/zram0    
-        fi    
-    fi  
+mcedit /etc/udev/rules.d/99-read-ahead.rules
+```
+add:   
+```
+ACTION=="add|change", KERNEL=="nvme0n1", ATTR{queue/read_ahead_kb}="2048"
 ```
 
 ### Dirty pages
