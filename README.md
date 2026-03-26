@@ -38,10 +38,10 @@ ip addr
 The command should return
 
 ```
-2: enp195s0f3u1u4: \<BROADCAST,MULTICAST,UP,LOWER\_UP\> mtu 1500 qdisc fq\_codel state UP group default qlen 1000  
+2: enp195s0f3u1u4: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000  
     link/ether XX:XX:XX:XX:XX:XX brd ff:ff:ff:ff:ff:ff  
     inet 192.168.XXX.XXX/24 brd 192.168.12.255 scope global dynamic noprefixroute enp195s0f3u1u4  
-       valid\_lft 86395sec preferred\_lft 86395sec  
+       valid_lft 86395sec preferred_lft 86395sec  
        ...
 
 ping voidlinux.org
@@ -109,7 +109,7 @@ mkfs.ext4 -L home /dev/mapper/home
 
 ```
 mount /dev/mapper/root /mnt  
-mkdir /mnt/\{boot,home\}  
+mkdir /mnt/{boot,home}  
 mount /dev/nvme0n1p1 /mnt/boot  
 mount /dev/mapper/home /mnt/home
 ```
@@ -118,19 +118,19 @@ mount /dev/mapper/home /mnt/home
 
 ```
 mkdir -p /mnt/var/db/xbps/keys  
-cp /var/db/xbps/keys/\* /mnt/var/db/xbps/keys/
+cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 ```
 
 ### Install minimal system
 
 ```
-xbps-install -Sy -R https://repo-default.voidlinux.org/current -r /mnt base-container linux-mainline linux-mainline-headers linux-firmware-broadcom bash linux-firmware-amd linux-firmware-network mc vim cpio kpartx kmod eudev ncurses kbd NetworkManager sudo dbus cryptsetup iputils exfatprogs e2fsprogs hwinfo grub-x86\_64-efi
+xbps-install -Sy -R https://repo-default.voidlinux.org/current -r /mnt base-container linux-mainline linux-mainline-headers linux-firmware-broadcom bash linux-firmware-amd linux-firmware-network mc vim cpio kpartx kmod eudev ncurses kbd NetworkManager sudo dbus cryptsetup iputils exfatprogs e2fsprogs hwinfo grub-x86_64-efi
 ```
 
 ### Create fstab
 
 ```
-xgenfstab /mnt \> /mnt/etc/fstab
+xgenfstab /mnt > /mnt/etc/fstab
 
 mcedit /etc/fstab
 ```
@@ -156,7 +156,7 @@ ln -sf /usr/share/zoneinfo/Europe/Rome /etc/localtime
 ### Set hostname
 
 ```
-echo void-linux \> /etc/hostname
+echo void-linux > /etc/hostname
 
 mcedit /etc/hosts
 ```
@@ -168,8 +168,8 @@ modify:
 ### Set locale
 
 ```
-echo "LANG=en\_GB.UTF-8" \> /etc/locale.conf  
-echo "en\_US.UTF-8 UTF-8" \>\> /etc/default/libc-locales
+echo "LANG=en_GB.UTF-8" > /etc/locale.conf  
+echo "en_US.UTF-8 UTF-8" >> /etc/default/libc-locales
 ```
 
 if you need some more complex configuration see [src/etc/locale.conf](file:///home/antoniosalsi/projects/Void-linux-Framework-13-AMD-7040-Full-Disk-Encryption-TMP2.0-Xfce4/src/etc/locale.conf)
@@ -219,8 +219,8 @@ blkid -s UUID -o value /dev/nvme0n1p3
 from now the value returned from /dev/nvme0n1p2 will be xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx  
 from now the value returned from /dev/nvme0n1p3 will be yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
 
-example: UUID\_ROOT\_PARTITION=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx  
-UUID\_HOME\_PARTITION=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
+example: UUID_ROOT_PARTITION=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx  
+UUID_HOME_PARTITION=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
 
 ### Define crypttab
 
@@ -238,7 +238,7 @@ home UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx /boot/volume.key luks,discard
 mcedit /etc/NetworkManager/NetworkManager.conf 
 ```
 
-add: \[main\]  
+add: [main]  
 plugins=keyfile  
 dns=default  
 rc-manager=resolvconf
@@ -254,7 +254,7 @@ mcedit /etc/default/grub
 ```
 
 modify:  
-GRUB\_CMDLINE\_LINUX\_DEFAULT="rd.luks.uuid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx root=/dev/mapper/root  rd.luks.uuid=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy home=/dev/mapper/home lsm=landlock,lockdown,yama,integrity,apparmor,bpf acpi_osi=\"!Windows 2000\" nowatchdog net.ifnames=0 apparmor=1 security=apparmor rw quiet rd.vconsole.keymap=it rd.retry=10 rd.luks.allow-discards resume=UUID=9928617c-f1c2-4ae4-925d-d863957e7728 resume_offset=43008 zswap.enabled=1 zswap.compressor=lz4 loglevel=4"
+GRUB_CMDLINE_LINUX_DEFAULT="rd.luks.uuid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx root=/dev/mapper/root  rd.luks.uuid=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy home=/dev/mapper/home lsm=landlock,lockdown,yama,integrity,apparmor,bpf acpi_osi="!Windows 2000" nowatchdog net.ifnames=0 apparmor=1 security=apparmor rw quiet rd.vconsole.keymap=it rd.retry=10 rd.luks.allow-discards resume=UUID=9928617c-f1c2-4ae4-925d-d863957e7728 resume_offset=43008 zswap.enabled=1 zswap.compressor=lz4 loglevel=4"
 
 ### Configure dracut
 
@@ -263,14 +263,14 @@ mcedit /etc/dracut.conf.d/10-crypt.conf
 ```
 
 add:  
-install\_items+=" /boot/volume.key /etc/crypttab " add\_dracutmodules+=" crypt " kernel\_cmdline+=" rd.luks.allow-discards "
+install_items+=" /boot/volume.key /etc/crypttab " add_dracutmodules+=" crypt " kernel_cmdline+=" rd.luks.allow-discards "
 
 ### Finalize
 
 ```
 xbps-reconfigure -f grub  
 dracut --force --regenerate-all  
-grub-install --target=x86\_64-efi --efi-directory=/boot --bootloader-id=void  
+grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=void  
 grub-mkconfig -o /boot/grub/grub.cfg  
 xbps-reconfigure -fa
 ```
@@ -282,7 +282,7 @@ And login as root
 ### Add locale repository
 
 ```
-echo 'repository=https://voidlinux.mirror.garr.it/current' \> /etc/xbps.d/10-repository-main.conf
+echo 'repository=https://voidlinux.mirror.garr.it/current' > /etc/xbps.d/10-repository-main.conf
 ```
 
 ### Remove unused firmware
@@ -327,7 +327,7 @@ mcedit /etc/udev/rules.d/99-udisks2.rules
 ```
 
 insert:  
-ENV\{ID\_FS\_USAGE\}=="filesystem|other|crypto", ENV\{UDISKS\_FILESYSTEM\_SHARED\}="1"
+ENV{ID_FS_USAGE}=="filesystem|other|crypto", ENV{UDISKS_FILESYSTEM_SHARED}="1"
 
 ### ~~Enable zram~~
 
@@ -336,7 +336,7 @@ ENV\{ID\_FS\_USAGE\}=="filesystem|other|crypto", ENV\{UDISKS\_FILESYSTEM\_SHARED
 
 
 ~~insert:~~  
-~~ACTION=="add", KERNEL=="zram0", ATTR\{initstate\}=="0", ATTR\{comp\_algorithm\}="zstd", ATTR\{disksize\}="4G"~~
+~~ACTION=="add", KERNEL=="zram0", ATTR{initstate}=="0", ATTR{comp_algorithm}="zstd", ATTR{disksize}="4G"~~
 
 ~~mcedit /usr/local/lib/sysctl.d/99_zram.conf~~
 
@@ -349,7 +349,7 @@ ENV\{ID\_FS\_USAGE\}=="filesystem|other|crypto", ENV\{UDISKS\_FILESYSTEM\_SHARED
 ~~mcedit /etc/rc.local~~
 
 ~~add:~~  
-~~echo "\033[1m=> Configure zram\033[m\n"~~  
+~~echo "033[1m=> Configure zram033[mn"~~  
 ~~swapoff /dev/zram0 2>/dev/null~~  
 ~~mkswap /dev/zram0~~  
 ~~swapon --priority 100 /dev/zram0~~  
@@ -419,10 +419,10 @@ mcedit /etc/cron.weekly/fstrim
 ```
 
 insert:  
-\#!/bin/bash  
-fstrim / 2\>/dev/null || true   
-fstrim /boot 2\>/dev/null || true   
-fstrim /home 2\>/dev/null || true
+#!/bin/bash  
+fstrim / 2>/dev/null || true   
+fstrim /boot 2>/dev/null || true   
+fstrim /home 2>/dev/null || true
 
 ```
 chmod +x /etc/cron.weekly/fstrim
@@ -437,8 +437,8 @@ mcedit /usr/local/bin/sendmail-fake.sh
 insert:
 
 ```
-    \#!/bin/bash  
-    \# /usr/local/bin/sendmail-fake.sh  
+    #!/bin/bash  
+    # /usr/local/bin/sendmail-fake.sh  
   
     MESSAGE=$(cat)  
   
@@ -459,9 +459,9 @@ mcedit /usr/local/bin/smartdnotify
 insert:
 
 ```
-    \#!/bin/sh  
+    #!/bin/sh  
   
-    sudo -u johndoe DISPLAY=:0 DBUS\_SESSION\_BUS\_ADDRESS=unix:path=/run/user/1000/bus notify-send "S.M.A.R.T Error ($SMARTD\_FAILTYPE)" "$SMARTD\_MESSAGE" --icon=dialog-warning -u critical
+    sudo -u johndoe DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus notify-send "S.M.A.R.T Error ($SMARTD_FAILTYPE)" "$SMARTD_MESSAGE" --icon=dialog-warning -u critical
 
 chmod o+x /usr/local/bin/smartdnotify
 
@@ -477,19 +477,19 @@ DEVICESCAN -H -l error -l selftest -m root -M exec /usr/local/bin/smartdnotify
 filefrag -v /var/swap.img
 ```
 
-in the index 0 of ext: label get physical\_offset: value in my case
+in the index 0 of ext: label get physical_offset: value in my case
 
 sudo filefrag -v /var/swap.img  
 Place your finger on the fingerprint reader Filesystem type is: ef53  
 File size of /var/swap.img is 17179869184 (4194304 blocks of 4096 bytes)  
-ext:     logical\_offset:        physical\_offset: length:   expected: flags:  
+ext:     logical_offset:        physical_offset: length:   expected: flags:  
 0:        0..       0:      **43008**..     43008:      1:
 
 ```
 mcedit /set/default/grub
 ```
 
-add in tail of GRUB\_CMDLINE\_LINUX\_DEFAULT="... resume=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx resume\_offset=43008"
+add in tail of GRUB_CMDLINE_LINUX_DEFAULT="... resume=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx resume_offset=43008"
 
 ### Install bluetooth
 
@@ -531,31 +531,31 @@ fprintd-enroll johndoe
 fprintd-enroll johndoe -f left-index-finger 
 ```
 
-Insert a row after \#@include common-auth or at the beginning of the auth section:  
-auth sufficient pam\_fprintd.so for this files:
+Insert a row after #@include common-auth or at the beginning of the auth section:  
+auth sufficient pam_fprintd.so for this files:
 
 - /etc/pam.d/lightdm
 - /etc/pam.d/system-auth
 - /etc/pam.d/system-login
 
-### FIX apparmor="ALLOWED" operation="sendmsg" class="net" info="failed af match" error=-13 profile="pulseaudio" pid=2020 comm="bluetooth" family="bluetooth" sock\_type="seqpacket" protocol=0 requested\_mask="send" denied\_mask="send"
+### FIX apparmor="ALLOWED" operation="sendmsg" class="net" info="failed af match" error=-13 profile="pulseaudio" pid=2020 comm="bluetooth" family="bluetooth" sock_type="seqpacket" protocol=0 requested_mask="send" denied_mask="send"
 
 ```
 mcedit /etc/apparmor.d/usr.bin.pulseaudio
 ```
 
-alter some *include\<...\>*  
+alter some *include<...>*  
 add *network bluetooth,*  
 something like that:
 
 ```
   ...  
-  include \<abstractions/base\>  
-  include \<abstractions/audio\>  
-  include \<abstractions/dbus-session\>  
-  include \<abstractions/dbus-strict\>  
-  include \<abstractions/nameservice\>  
-  include \<abstractions/X\>  
+  include <abstractions/base>  
+  include <abstractions/audio>  
+  include <abstractions/dbus-session>  
+  include <abstractions/dbus-strict>  
+  include <abstractions/nameservice>  
+  include <abstractions/X>
   
   network bluetooth,  
   
@@ -568,13 +568,13 @@ something like that:
 In this case I force Italian keyboard layout
 
 ```
-cat /etc/X11/xorg.conf.d/00-keyboard.conf \<\< 'EOF'  
+cat /etc/X11/xorg.conf.d/00-keyboard.conf << 'EOF'  
 Section "InputClass"  
     Identifier "system-keyboard"  
     MatchIsKeyboard "yes"  
     Option "XkbLayout" "it"  
     Option "XkbModel" "pc105"  
-    Option "XkbOptions" "terminate:ctrl\_alt\_bksp"  
+    Option "XkbOptions" "terminate:ctrl_alt_bksp"  
 EndSection  
 EOF
 ```
