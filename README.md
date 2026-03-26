@@ -419,10 +419,14 @@ mcedit /etc/cron.weekly/fstrim
 ```
 
 insert:  
+```
 #!/bin/bash  
 fstrim / 2>/dev/null || true   
 fstrim /boot 2>/dev/null || true   
 fstrim /home 2>/dev/null || true
+```
+
+then  
 
 ```
 chmod +x /etc/cron.weekly/fstrim
