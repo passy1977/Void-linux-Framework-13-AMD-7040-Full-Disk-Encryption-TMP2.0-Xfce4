@@ -11,6 +11,7 @@ account    include    system-auth
 
 password   include    system-auth
 
+session    required   pam_limits.so
 session    optional   pam_loginuid.so
 session    include    system-auth
 session    optional   pam_motd.so          motd=/etc/motd

@@ -583,9 +583,46 @@ EndSection
 EOF
 ```
 
+### Podman configuration
+```
+cat /etc/security/limits.d/johndoe-limits.conf << 'EOF'  
+johndoe soft nofile 65536
+johndoe hard nofile 65536
+johndoe soft memlock unlimited
+johndoe hard memlock unlimited
+```
+```
+mcedit /etc/pam.d/lightdm
+```
+Add `session required pam_limits.so` to pam modules at the start of _\# Setup session_:
+```
+# Setup session
+session   required pam_limits.so
+...
+```
+```
+mcedit /etc/pam.d/system-login
+```
+Add `session required pam_limits.so` to pam modules before _session    optional   pam_loginuid.so_:
+```
+session   required pam_limits.so
+...
+```
+Reboot the system
+```
+echo "ignorepkg=runc" > /etc/xbps.d/podman.conf
+```
+```
+xbps-install -Su crun && xbps-remove -Rf runc
+```
+Check the configuration
+```
+podman info --format '{{.Host.OCIRuntime.Name}}'
+```
+
 ### Enable TPM2
 
-If you want to enable decrypt from TPM2 follow this [TPM2-Documentation.md](file:///home/antoniosalsi/projects/Void-linux-Framework-13-AMD-7040-Full-Disk-Encryption-TMP2.0-Xfce4/TPM2-Documentation.md) and remember to delete /boot/volume.key
+If you want to enable decrypt from TPM2 follow this [TPM2-Documentation.md](TPM2-Documentation.md) and remember to delete /boot/volume.key
 
 ## Resources
 
