@@ -613,12 +613,21 @@ Reboot the system
 echo "ignorepkg=runc" > /etc/xbps.d/podman.conf
 ```
 ```
-xbps-install -Su crun && xbps-remove -Rf runc
+xbps-install -Su crun fuse-overlayfs && xbps-remove -Rf runc
 ```
 Check the configuration
 ```
 podman info --format '{{.Host.OCIRuntime.Name}}'
 ```
+```
+cat ~/.config/containers/storage.conf << 'EOF'  
+[storage]
+driver = "overlay"
+
+[storage.options.overlay]
+mount_program = "/usr/bin/fuse-overlayfs"
+```
+
 
 ### Enable TPM2
 
