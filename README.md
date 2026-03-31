@@ -629,7 +629,7 @@ echo "\033[1m=> Configure cgroup v2\033[m\n"
 echo "+cpu +memory +i0 +pids" /sys/fs/cgroup/cgroup. subtree_control
 EOF
 ```
-Use runc instead crun
+Use crun instead runc
 
 ```
 echo "ignorepkg=runc" > /etc/xbps.d/podman.conf
