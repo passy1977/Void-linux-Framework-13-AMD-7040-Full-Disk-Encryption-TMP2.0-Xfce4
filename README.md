@@ -620,7 +620,7 @@ Check the configuration
 podman info --format '{{.Host.OCIRuntime.Name}}'
 ```
 ```
-cat ~/.config/containers/storage.conf << 'EOF'  
+cat /etc/containers/storage.conf << 'EOF'  
 [storage]
 driver = "overlay"
 
