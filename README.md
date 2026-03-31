@@ -542,7 +542,9 @@ auth sufficient pam_fprintd.so for this files:
 - /etc/pam.d/system-auth
 - /etc/pam.d/system-login
 
-### FIX apparmor="ALLOWED" operation="sendmsg" class="net" info="failed af match" error=-13 profile="pulseaudio" pid=2020 comm="bluetooth" family="bluetooth" sock_type="seqpacket" protocol=0 requested_mask="send" denied_mask="send"
+### FIX Aparmor error
+if find into log an erro like that:  
+_apparmor="ALLOWED" operation="sendmsg" class="net" info="failed af match" error=-13 profile="pulseaudio" pid=2020 comm="bluetooth" family="bluetooth" sock_type="seqpacket" protocol=0 requested_mask="send" denied_mask="send"_
 
 ```
 mcedit /etc/apparmor.d/usr.bin.pulseaudio
@@ -608,17 +610,8 @@ Add `session required pam_limits.so` to pam modules before _session    optional 
 session   required pam_limits.so
 ...
 ```
-Reboot the system
-```
-echo "ignorepkg=runc" > /etc/xbps.d/podman.conf
-```
-```
-xbps-install -Su crun fuse-overlayfs && xbps-remove -Rf runc
-```
-Check the configuration
-```
-podman info --format '{{.Host.OCIRuntime.Name}}'
-```
+Enable efuse overlay
+
 ```
 cat /etc/containers/storage.conf << 'EOF'  
 [storage]
@@ -628,10 +621,27 @@ driver = "overlay"
 mount_program = "/usr/bin/fuse-overlayfs"
 ```
 
+Configure cgroup v2
+
 ```
 sudo tee -a /etc/rc.local "EOF '
+echo "\033[1m=> Configure cgroup v2\033[m\n"
 echo "+cpu +memory +i0 +pids" /sys/fs/cgroup/cgroup. subtree_control
 EOF
+```
+Use runc instead crun
+
+```
+echo "ignorepkg=runc" > /etc/xbps.d/podman.conf
+```
+Reboot the system
+
+```
+xbps-install -Su podman crun fuse-overlayfs
+```
+Check the configuration
+```
+podman info --format '{{.Host.OCIRuntime.Name}}'
 ```
 
 ### Enable TPM2
