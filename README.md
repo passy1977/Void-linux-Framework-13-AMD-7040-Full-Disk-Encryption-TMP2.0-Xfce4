@@ -628,6 +628,11 @@ driver = "overlay"
 mount_program = "/usr/bin/fuse-overlayfs"
 ```
 
+```
+sudo tee -a /etc/rc.local "EOF '
+echo "+cpu +memory +i0 +pids" /sys/fs/cgroup/cgroup. subtree_control
+EOF
+```
 
 ### Enable TPM2
 
