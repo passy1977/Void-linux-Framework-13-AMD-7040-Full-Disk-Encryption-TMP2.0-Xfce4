@@ -1,5 +1,22 @@
 #!/bin/sh
 
-sudo -u antoniosalsi DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus notify-send "S.M.A.R.T Error ($SMARTD_FAILTYPE)" "$SMARTD_MESSAGE" --icon=dialog-warning -u critical
+# Find the DBUS session bus address from the running user session
+USER_PID=$(pgrep -u antoniosalsi xfce4-session 2>/dev/null | head -1)
+if [ -z "$USER_PID" ]; then
+    USER_PID=$(pgrep -u antoniosalsi xfce4-notifyd 2>/dev/null | head -1)
+fi
 
+if [ -n "$USER_PID" ]; then
+    DBUS_ADDR=$(grep -z DBUS_SESSION_BUS_ADDRESS /proc/$USER_PID/environ 2>/dev/null | tr '\0' '\n' | grep DBUS_SESSION_BUS_ADDRESS | cut -d= -f2-)
+fi
 
+# Fallback to static path
+if [ -z "$DBUS_ADDR" ]; then
+    DBUS_ADDR="unix:path=/run/user/1000/bus"
+fi
+
+sudo -u antoniosalsi \
+    DISPLAY=:0 \
+    DBUS_SESSION_BUS_ADDRESS="$DBUS_ADDR" \
+    notify-send "S.M.A.R.T Error ($SMARTD_FAILTYPE)" "$SMARTD_MESSAGE" \
+    --icon=dialog-warning -u critical
