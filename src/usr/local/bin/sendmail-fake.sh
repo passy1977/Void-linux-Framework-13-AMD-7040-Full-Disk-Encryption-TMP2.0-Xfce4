@@ -2,8 +2,11 @@
 
 MESSAGE=$(cat)
 
+# Maximum number of body lines to include in the notification
+MAX_BODY_LINES=5
+
 SUBJECT=$(printf '%s' "$MESSAGE" | grep -i '^Subject:' | head -1 | sed 's/^[Ss]ubject:[[:space:]]*//')
-BODY=$(printf '%s' "$MESSAGE" | sed -n '/^$/,$ p' | sed '1d')
+BODY=$(printf '%s' "$MESSAGE" | sed -n '/^$/,$ p' | sed '1d' | head -n "$MAX_BODY_LINES")
 
 [ -z "$SUBJECT" ] && SUBJECT="Sendmail message"
 
