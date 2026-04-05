@@ -10,6 +10,11 @@ BODY=$(printf '%s' "$MESSAGE" | sed -n '/^$/,$ p' | sed '1d' | head -n "$MAX_BOD
 
 [ -z "$SUBJECT" ] && SUBJECT="Sendmail message"
 
+if [ -z "$BODY" ]; then
+    BODY==$(printf '%s' "$MESSAGE" | head -n "$MAX_BODY_LINES")
+fi
+
+
 # Find the DBUS session bus address from the running user session
 USER_PID=$(pgrep -u antoniosalsi xfce4-session 2>/dev/null | head -1)
 if [ -z "$USER_PID" ]; then
@@ -25,9 +30,6 @@ if [ -z "$DBUS_ADDR" ]; then
     DBUS_ADDR="unix:path=/run/user/1000/bus"
 fi
 
-if [ -z "$BODY" ]; then
-    BODY==$(printf '%s' "$MESSAGE" | head -n "$MAX_BODY_LINES")
-fi
 
 
 sudo -u antoniosalsi \
