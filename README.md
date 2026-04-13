@@ -432,7 +432,6 @@ kernel.sched_autogroup_enabled=0
 ```
 mcedit /etc/cron.weekly/fstrim
 ```
-
 insert:  
 ```
 #!/bin/bash  
