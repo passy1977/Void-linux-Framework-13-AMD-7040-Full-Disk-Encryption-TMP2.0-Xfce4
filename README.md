@@ -606,6 +606,7 @@ johndoe soft nofile 65536
 johndoe hard nofile 65536
 johndoe soft memlock unlimited
 johndoe hard memlock unlimited
+'EOF'
 ```
 ```
 mcedit /etc/pam.d/lightdm
