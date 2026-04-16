@@ -207,13 +207,12 @@ johndoe	ALL=(ALL:ALL) ALL
 ### Configure regional variable
 
 ```
-mcedit /etc/rc.conf
-```
-
-add:  
+cat /etc/rc.conf << 'EOF'   
 HARDWARECLOCK="UTC"  
 TIMEZONE="Europe/Rome"  
 KEYMAP="it"
+'EOF'
+```
 
 ### Create volume key
 
