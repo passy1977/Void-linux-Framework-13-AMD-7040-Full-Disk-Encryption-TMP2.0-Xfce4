@@ -183,7 +183,7 @@ LC_PAPER="it_IT.UTF-8"
 LC_TELEPHONE="it_IT.UTF-8"
 LC_NAME="it_IT.UTF-8"
 LANG="en_GB.UTF-8"
-EOF
+'EOF'
 
 ```
 
@@ -199,11 +199,10 @@ xbps-reconfigure -f glibc-locales
 useradd -mG wheel,lp,audio,video,optical,storage,dbus,input,plugdev,polkitd johndoe  
 passwd johndoe
 
-mcedit /etc/sudoers.d/johndoe
-```
-
-add:  
+cat /etc/sudoers.d/johndoe << 'EOF'  
 johndoe	ALL=(ALL:ALL) ALL
+'EOF'
+```
 
 ### Configure regional variable
 
@@ -240,25 +239,22 @@ UUID_HOME_PARTITION=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
 ### Define crypttab
 
 ```
-mcedit /etc/crypttab
-```
-
-add:  
+cat /etc/crypttab << 'EOF'  
 root UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx /boot/volume.key luks,discard  
 home UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx /boot/volume.key luks,discard
+'EOF'
+```
 
 ### Configure NetworkManager
 
 ```
-mcedit /etc/NetworkManager/NetworkManager.conf 
-```
-
-add: [main]  
-plugins=keyfile  
-dns=default  
+cat /etc/NetworkManager/NetworkManager.conf  << 'EOF'   
+[main]
+plugins=keyfile
+dns=default
 rc-manager=resolvconf
+'EOF'
 
-```
 ln -s /etc/sv/NetworkManager /var/service
 ```
 
@@ -303,14 +299,11 @@ echo 'repository=https://voidlinux.mirror.garr.it/current' > /etc/xbps.d/10-repo
 ### Remove unused firmware
 
 ```
-mcedit /etc/xbps.d/linux-firmware.conf
-```
-
-add:  
+cat /etc/xbps.d/linux-firmware.conf  << 'EOF'   
 ignorepkg=linux-firmware-intel  
 ignorepkg=linux-firmware-nvidia
+'EOF'
 
-```
 xbps-remove -Ry linux-firmware-intel   
 xbps-remove -Ry linux-firmware-nvidia  
 ```
@@ -373,22 +366,18 @@ ENV{ID_FS_USAGE}=="filesystem|other|crypto", ENV{UDISKS_FILESYSTEM_SHARED}="1"
 
 ### Swappiness
 ```
-mcedit /usr/local/lib/sysctl.d/99_swappiness.conf
-```
-add:   
-```
+cat /usr/local/lib/sysctl.d/99_swappiness.conf  << 'EOF'   
 vm.swappiness=10
 vm.page-cluster=1
+'EOF'
 ```
 
 ### Read ahead
 When you read a file, the kernel reads extra data beyond what you asked for assuming you will need it next. This is called read-ahead. Measured in kilobytes.  
 ```
-mcedit /etc/udev/rules.d/99-read-ahead.rules
-```
-add:   
-```
+cat /etc/udev/rules.d/99-read-ahead.rules  << 'EOF'   
 ACTION=="add|change", KERNEL=="nvme0n1", ATTR{queue/read_ahead_kb}="2048"
+'EOF'
 ```
 
 ### Dirty pages
@@ -397,52 +386,40 @@ When you write a file, data goes to a memory buffer first (dirty pages) and is f
 * __vm.dirty_ratio__ — maximum percentage of RAM that can contain dirty data before the kernel blocks new writes and forces a flush. Default is typically 20%.  
 * __vm.dirty_background_ratio__ — percentage at which background flushing begins quietly, without blocking applications.  
 ```
-mcedit /usr/local/lib/sysctl.d/99_dirty_pages.conf
-```
-add:   
-```
+cat /usr/local/lib/sysctl.d/99_dirty_pages.conf  << 'EOF'   
 vm.dirty_ratio=10
 vm.dirty_background_ratio=5
+'EOF'
 ```
 
 ### Memory mapped
 
 Maximum number of memory-mapped regions a single process is allowed to have. The default is conservative and causes silent failures in some workloads - Proton/Steam games, Elasticsearch, and large Java applications all hit this ceiling.
 ```
-mcedit /usr/local/lib/sysctl.d/99_memory_mapped.conf
-```
-add:   
-```
+cat /usr/local/lib/sysctl.d/99_memory_mapped.conf  << 'EOF'   
 vm.max_map_count=262144
+'EOF'
 ```
 ### Scheduled auogroup
 
 Autogroup changes how CPU time is distributed. Instead of treating every process equally, the kernel groups processes by terminal session. Each TTY session becomes a group and the scheduler gives equal time to each group — not to each individual process.
 
 ```
-mcedit /usr/local/lib/sysctl.d/99_scheduled_auogroup.conf
-```
-add:   
-```
+cat /usr/local/lib/sysctl.d/99_scheduled_auogroup.conf  << 'EOF'   
 kernel.sched_autogroup_enabled=0
+'EOF'
 ```
 
 ### FSTrim nvme
 
 ```
-mcedit /etc/cron.weekly/fstrim
-```
-insert:  
-```
+cat /etc/cron.weekly/fstrim << 'EOF'   
 #!/bin/bash  
 fstrim / 2>/dev/null || true   
 fstrim /boot 2>/dev/null || true   
 fstrim /home 2>/dev/null || true
-```
+'EOF'
 
-then  
-
-```
 chmod +x /etc/cron.weekly/fstrim
 ```
 
@@ -519,18 +496,15 @@ ln -s /etc/sv/bluetoothd /var/service
 ### Install XFCE4
 
 ```
-mcedit /etc/xbps.d/xfce4.conf 
-```
-
-add:  
+cat /etc/xbps.d/xfce4.conf << 'EOF'   
 ignorepkg=mousepad  
 ignorepkg=ristretto  
 ignorepkg=parole  
 ignorepkg=xfce4-taskmanager  
 ignorepkg=ffplay6  
 ignorepkg=tumbler
+'EOF'
 
-```
 xbps-install vulkan-loader amdvlk mesa-vaapi mesa-vdpau xorg-minimal xf86-video-amdgpu xterm xorg-fonts xfce4 catfish xfce-polkit xfce4-pulseaudio-plugin xfce4-whiskermenu-plugin pavucontrol pulseaudio gvfs-smb lightdm lightdm-gtk3-greeter xdg-desktop-portal-gtk 
 ```
 
@@ -596,7 +570,7 @@ Section "InputClass"
     Option "XkbModel" "pc105"  
     Option "XkbOptions" "terminate:ctrl_alt_bksp"  
 EndSection  
-EOF
+'EOF'
 ```
 
 ### Podman configuration
@@ -634,6 +608,7 @@ driver = "overlay"
 
 [storage.options.overlay]
 mount_program = "/usr/bin/fuse-overlayfs"
+'EOF
 ```
 
 Configure cgroup v2
