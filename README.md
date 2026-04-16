@@ -161,9 +161,11 @@ echo void-linux > /etc/hostname
 mcedit /etc/hosts
 ```
 
-modify:  
+modify:
+```
 127.0.0.1		localhost.localdomain	localhost	void-linux  
 ::1			localhost.localdomain	localhost ip6-localhost	void-linux
+```
 
 ### Set locale
 
@@ -264,7 +266,9 @@ mcedit /etc/default/grub
 ```
 
 modify:  
+```
 GRUB_CMDLINE_LINUX_DEFAULT="rd.luks.uuid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx root=/dev/mapper/root  rd.luks.uuid=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy home=/dev/mapper/home lsm=landlock,lockdown,yama,integrity,apparmor,bpf acpi_osi="!Windows 2000" nowatchdog net.ifnames=0 apparmor=1 security=apparmor rw quiet rd.vconsole.keymap=it rd.retry=10 rd.luks.allow-discards resume=UUID=9928617c-f1c2-4ae4-925d-d863957e7728 resume_offset=43008 zswap.enabled=1 zswap.compressor=lz4 loglevel=4"
+```
 
 ### Configure dracut
 
