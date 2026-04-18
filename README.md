@@ -429,45 +429,156 @@ chmod +x /etc/cron.weekly/fstrim
 ### Install system notification error
 
 ```
-mcedit /usr/local/bin/sendmail-fake.sh
-```
+cat /usr/local/bin/sendmail-fake.sh << 'EOF'   
+#!/bin/bash
 
-insert:
+MESSAGE=$(cat)
 
-```
-    #!/bin/bash  
-    # /usr/local/bin/sendmail-fake.sh  
-  
-    MESSAGE=$(cat)  
-  
-    notify-send -t 5000 "Sendmail message" "$MESSAGE" --icon=dialog-information  
-  
-    exit 0
+# Maximum number of body lines to include in the notification
+MAX_BODY_LINES=7
 
-chmod o+x /usr/local/bin/sendmail-fake.sh  
-ln -s /usr/local/bin/sendmail-fake.sh /usr/bin/sendmail
+# Check if message has email headers (contains "Subject:" or other headers)
+if printf '%s' "$MESSAGE" | grep -q -i '^[A-Za-z-]*:[[:space:]]'; then
+    # Email format: extract subject and body
+    SUBJECT=$(printf '%s' "$MESSAGE" | grep -i '^Subject:' | head -1 | sed 's/^[Ss]ubject:[[:space:]]*//')
+    BODY=$(printf '%s' "$MESSAGE" | sed -n '/^$/,$ p' | sed '1d' | head -n "$MAX_BODY_LINES")
+    [ -z "$SUBJECT" ] && SUBJECT="Sendmail message"
+else
+    # Plain text: use first line as subject, rest as body
+    SUBJECT=$1
+    if [ -z "$SUBJECT" ]; then
+        SUBJECT="Sendmail message"
+    fi
+    BODY=$(printf '%s' "$MESSAGE" | tail -n +2 | head -n "$MAX_BODY_LINES")
+fi
+
+# If body is still empty, use the whole message
+if [ -z "$BODY" ]; then
+    BODY=$(printf '%s' "$MESSAGE" | head -n "$MAX_BODY_LINES")
+fi
+
+
+# Find the DBUS session bus address from the running user session
+USER_PID=$(pgrep -u $USER xfce4-session 2>/dev/null | head -1)
+if [ -z "$USER_PID" ]; then
+    USER_PID=$(pgrep -u $USER xfce4-notifyd 2>/dev/null | head -1)
+fi
+
+if [ -n "$USER_PID" ]; then
+    DBUS_ADDR=$(grep -z DBUS_SESSION_BUS_ADDRESS /proc/$USER_PID/environ 2>/dev/null | tr '\0' '\n' | grep DBUS_SESSION_BUS_ADDRESS | cut -d= -f2-)
+fi
+
+# Fallback to static path
+if [ -z "$DBUS_ADDR" ]; then
+    DBUS_ADDR="unix:path=/run/user/$(id -u)/bus"
+fi
+
+
+
+sudo -u $USER \
+    DISPLAY=:0 \
+    DBUS_SESSION_BUS_ADDRESS="$DBUS_ADDR" \
+    notify-send -t 2500 "$SUBJECT" "$BODY" --icon=dialog-information -u normal
+
+exit 0
+
+'EOF'
+chmod o+x /usr/local/bin/sendmail-fake
+ln -s /usr/local/bin/sendmail-fake /usr/bin/sendmail
 ```
 
 ### Set S.M.A.R.T notify
 
 ```
-mcedit /usr/local/bin/smartdnotify
-```
+cat /usr/local/bin/smartdnotify << 'EOF'   
+#!/bin/bash
 
-insert:
+# Find the DBUS session bus address from the running user session
+USER_PID=$(pgrep -u $USER xfce4-session 2>/dev/null | head -1)
+if [ -z "$USER_PID" ]; then
+    USER_PID=$(pgrep -u $USER xfce4-notifyd 2>/dev/null | head -1)
+fi
 
-```
-    #!/bin/sh  
-  
-    sudo -u johndoe DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus notify-send "S.M.A.R.T Error ($SMARTD_FAILTYPE)" "$SMARTD_MESSAGE" --icon=dialog-warning -u critical
+if [ -n "$USER_PID" ]; then
+    DBUS_ADDR=$(grep -z DBUS_SESSION_BUS_ADDRESS /proc/$USER_PID/environ 2>/dev/null | tr '\0' '\n' | grep DBUS_SESSION_BUS_ADDRESS | cut -d= -f2-)
+fi
 
+# Fallback to static path
+if [ -z "$DBUS_ADDR" ]; then
+    DBUS_ADDR="unix:path=/run/user/$(id -u)/bus"
+fi
+
+sudo -u $USER \
+    DISPLAY=:0 \
+    DBUS_SESSION_BUS_ADDRESS="$DBUS_ADDR" \
+    notify-send "S.M.A.R.T Error ($SMARTD_FAILTYPE)" "$SMARTD_MESSAGE" \
+    --icon=dialog-warning -u critical
+
+exit 0
+
+'EOF'
 chmod o+x /usr/local/bin/smartdnotify
+```
 
+```
 mcedit /etc/smartd/smartd.conf
 ```
-
 insert at the end:  
+```
 DEVICESCAN -H -l error -l selftest -m root -M exec /usr/local/bin/smartdnotify
+```
+
+### Create script for check runit status
+
+```
+cat /usr/local/bin/sv_ls << 'EOF'   
+#!/bin/bash
+
+# Color definitions
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Print table header
+printf "${BLUE}%-40s %-10s %-10s${NC}\n" "SERVICE" "PID" "UPTIME"
+printf "%s\n" "------------------------------------------------------------"
+
+# Execute command and read output line by line
+sudo sv status /var/service/* | while IFS= read -r line; do
+    # Extract service path (e.g., /var/service/NetworkManager)
+    # The regex looks for text between "run: " and ": "
+    if [[ $line =~ run:\ (/var/service/[^:]+): ]]; then
+        service_path="${BASH_REMATCH[1]}"
+        # Extract only the service name from the path
+        service_name=$(basename "$service_path")
+    else
+        continue # Skip lines that don't match the expected pattern
+    fi
+
+    # Extract the main PID (the first number in parentheses)
+    if [[ $line =~ \(pid\ ([0-9]+) ]]; then
+        pid="${BASH_REMATCH[1]}"
+    else
+        pid="N/A"
+    fi
+
+    # Extract uptime for the main process (e.g., 955s)
+    # We look for the pattern ") XXXs;" following the first PID
+    if [[ $line =~ \(pid\ [0-9]+\)\ ([0-9]+)s\; ]]; then
+        uptime="${BASH_REMATCH[1]}s"
+    else
+        uptime="N/A"
+    fi
+
+    # Print the formatted row in green
+    printf "${GREEN}%-40s %-10s %-10s${NC}\n" "$service_name" "$pid" "$uptime"
+done
+
+exit 0
+
+'EOF'
+chmod o+x /usr/local/bin/sv_ls
+```
 
 ### Configure hibernation
 
