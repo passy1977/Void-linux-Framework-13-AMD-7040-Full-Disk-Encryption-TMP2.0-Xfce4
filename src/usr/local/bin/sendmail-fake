@@ -1,5 +1,18 @@
 #!/bin/bash
 
+# Default desktop user for daemon-triggered notifications.
+# Can be overridden by setting NOTIFY_USER in the environment before calling this script.
+DEFAULT_NOTIFY_USER="foo"
+
+# Determine the target user for the desktop notification.
+# When run as root or another non-desktop user, fall back to the default and log it.
+if [ "${USER:-root}" = "$DEFAULT_NOTIFY_USER" ]; then
+    TARGET_USER="$DEFAULT_NOTIFY_USER"
+else
+    logger -p daemon.warning "sendmail-fake: invoked as user '${USER:-root}', falling back to default notify user '$DEFAULT_NOTIFY_USER'"
+    TARGET_USER="$DEFAULT_NOTIFY_USER"
+fi
+
 MESSAGE=$(cat)
 
 # Maximum number of body lines to include in the notification
@@ -27,9 +40,9 @@ fi
 
 
 # Find the DBUS session bus address from the running user session
-USER_PID=$(pgrep -u $USER xfce4-session 2>/dev/null | head -1)
+USER_PID=$(pgrep -u "$TARGET_USER" xfce4-session 2>/dev/null | head -1)
 if [ -z "$USER_PID" ]; then
-    USER_PID=$(pgrep -u $USER xfce4-notifyd 2>/dev/null | head -1)
+    USER_PID=$(pgrep -u "$TARGET_USER" xfce4-notifyd 2>/dev/null | head -1)
 fi
 
 if [ -n "$USER_PID" ]; then
@@ -38,12 +51,12 @@ fi
 
 # Fallback to static path
 if [ -z "$DBUS_ADDR" ]; then
-    DBUS_ADDR="unix:path=/run/user/$(id -u)/bus"
+    DBUS_ADDR="unix:path=/run/user/$(id -u "$TARGET_USER")/bus"
 fi
 
 
 
-sudo -u $USER \
+sudo -u "$TARGET_USER" \
     DISPLAY=:0 \
     DBUS_SESSION_BUS_ADDRESS="$DBUS_ADDR" \
     notify-send -t 2500 "$SUBJECT" "$BODY" --icon=dialog-information -u normal
