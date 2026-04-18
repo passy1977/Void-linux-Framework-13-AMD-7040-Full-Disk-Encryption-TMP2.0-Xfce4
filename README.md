@@ -423,6 +423,7 @@ ln -s /usr/local/bin/sendmail-fake /usr/bin/sendmail
 ### Set S.M.A.R.T notify
 
 Copy [src/usr/local/bin/smartnotify](src/usr/local/bin/smartnotify) to /usr/local/bin
+
 ```
 chmod o+x /usr/local/bin/smartnotify
 ```
