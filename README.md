@@ -534,47 +534,73 @@ DEVICESCAN -H -l error -l selftest -m root -M exec /usr/local/bin/smartdnotify
 cat /usr/local/bin/sv_ls << 'EOF'   
 #!/bin/bash
 
-# Color definitions
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+USE_COLOR=true
 
-# Print table header
+print_help() {
+    printf "Usage: %s [OPTION]\n" "$(basename "$0")"
+    printf "\n"
+    printf "Options:\n"
+    printf "  -h, --help      Show this help message\n"
+    printf "  -m, --monitor   Run in monitor mode using watch (no colors)\n"
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            print_help
+            exit 0
+            ;;
+        -m|--monitor)
+            exec watch -n 2 "$0" --no-color
+            ;;
+        --no-color)
+            USE_COLOR=false
+            shift
+            ;;
+        *)
+            printf "Unknown option: %s\n" "$1" >&2
+            print_help >&2
+            exit 1
+            ;;
+    esac
+done
+
+if $USE_COLOR; then
+    GREEN='\033[0;32m'
+    BLUE='\033[0;36m'
+    NC='\033[0m'
+else
+    GREEN=''
+    BLUE=''
+    NC=''
+fi
+
 printf "${BLUE}%-40s %-10s %-10s${NC}\n" "SERVICE" "PID" "UPTIME"
 printf "%s\n" "------------------------------------------------------------"
 
-# Execute command and read output line by line
 sudo sv status /var/service/* | while IFS= read -r line; do
-    # Extract service path (e.g., /var/service/NetworkManager)
-    # The regex looks for text between "run: " and ": "
+
     if [[ $line =~ run:\ (/var/service/[^:]+): ]]; then
         service_path="${BASH_REMATCH[1]}"
-        # Extract only the service name from the path
         service_name=$(basename "$service_path")
     else
-        continue # Skip lines that don't match the expected pattern
+        continue 
     fi
 
-    # Extract the main PID (the first number in parentheses)
     if [[ $line =~ \(pid\ ([0-9]+) ]]; then
         pid="${BASH_REMATCH[1]}"
     else
         pid="N/A"
     fi
 
-    # Extract uptime for the main process (e.g., 955s)
-    # We look for the pattern ") XXXs;" following the first PID
     if [[ $line =~ \(pid\ [0-9]+\)\ ([0-9]+)s\; ]]; then
         uptime="${BASH_REMATCH[1]}s"
     else
         uptime="N/A"
     fi
 
-    # Print the formatted row in green
     printf "${GREEN}%-40s %-10s %-10s${NC}\n" "$service_name" "$pid" "$uptime"
 done
-
-exit 0
 
 'EOF'
 chmod o+x /usr/local/bin/sv_ls
