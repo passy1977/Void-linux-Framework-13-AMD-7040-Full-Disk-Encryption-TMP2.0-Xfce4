@@ -542,6 +542,7 @@ print_help() {
     printf "Options:\n"
     printf "  -h, --help      Show this help message\n"
     printf "  -m, --monitor   Run in monitor mode using watch (no colors)\n"
+    printf "  --no-color      No colors\n"
 }
 
 while [[ $# -gt 0 ]]; do
