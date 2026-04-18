@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Default desktop user for daemon-triggered notifications.
-DEFAULT_NOTIFY_USER="foo"
+DEFAULT_NOTIFY_USER="johndoe"
 
 # Determine the target user for the desktop notification.
 # When run as root or another non-desktop user, fall back to the default and log it.

@@ -2,7 +2,7 @@
 
 # Default desktop user for daemon-triggered notifications.
 # Can be overridden by setting NOTIFY_USER in the environment before calling this script.
-DEFAULT_NOTIFY_USER="foo"
+DEFAULT_NOTIFY_USER="johndoe"
 
 # Determine the target user for the desktop notification.
 # When run as root or another non-desktop user, fall back to the default and log it.
