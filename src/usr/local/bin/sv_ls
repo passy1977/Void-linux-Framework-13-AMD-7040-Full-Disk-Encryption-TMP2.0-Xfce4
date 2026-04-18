@@ -1,0 +1,32 @@
+#!/bin/bash
+
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m' 
+
+printf "${BLUE}%-40s %-10s %-10s${NC}\n" "SERVICE" "PID" "UPTIME"
+printf "%s\n" "------------------------------------------------------------"
+
+sudo sv status /var/service/* | while IFS= read -r line; do
+
+    if [[ $line =~ run:\ (/var/service/[^:]+): ]]; then
+        service_path="${BASH_REMATCH[1]}"
+        service_name=$(basename "$service_path")
+    else
+        continue 
+    fi
+
+    if [[ $line =~ \(pid\ ([0-9]+) ]]; then
+        pid="${BASH_REMATCH[1]}"
+    else
+        pid="N/A"
+    fi
+
+    if [[ $line =~ \(pid\ [0-9]+\)\ ([0-9]+)s\; ]]; then
+        uptime="${BASH_REMATCH[1]}s"
+    else
+        uptime="N/A"
+    fi
+
+    printf "${GREEN}%-40s %-10s %-10s${NC}\n" "$service_name" "$pid" "$uptime"
+done
