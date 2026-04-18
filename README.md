@@ -170,26 +170,11 @@ modify:
 ### Set locale
 
 ```
-cat /etc/locale.conf << 'EOF'  
-LANGUAGE="en_GB.UTF-8"
-LC_CTYPE="C.UTF-8"
-LC_NUMERIC="it_IT.UTF-8"
-LC_COLLATE="C.UTF-8"
-LC_TIME="it_IT.UTF-8"
-LC_MESSAGES="en_GB.UTF-8"
-LC_MONETARY="it_IT.UTF-8"
-LC_ADDRESS="it_IT.UTF-8"
-LC_IDENTIFICATION="it_IT.UTF-8"
-LC_MEASUREMENT="it_IT.UTF-8"
-LC_PAPER="it_IT.UTF-8"
-LC_TELEPHONE="it_IT.UTF-8"
-LC_NAME="it_IT.UTF-8"
-LANG="en_GB.UTF-8"
-'EOF'
-
+echo "LANG=en_GB.UTF-8" > /etc/locale.conf  
+echo "en_US.UTF-8 UTF-8" >> /etc/default/libc-locales
 ```
 
-if you need some more complex configuration see [src/etc/locale.conf](file:///home/antoniosalsi/projects/Void-linux-Framework-13-AMD-7040-Full-Disk-Encryption-TMP2.0-Xfce4/src/etc/locale.conf)
+if you need some more complex configuration see [src/etc/locale.conf](src/etc/locale.conf)
 
 ```
 xbps-reconfigure -f glibc-locales
