@@ -175,7 +175,7 @@ echo "en_US.UTF-8 UTF-8" >> /etc/default/libc-locales
 ```
 
 if you need some more complex configuration see [src/etc/locale.conf](src/etc/locale.conf)
-if you need some more complex configuration see [src/etc/locale.conf](src/etc/locale.conf)
+
 ```
 xbps-reconfigure -f glibc-locales
 ```
@@ -390,7 +390,7 @@ vm.max_map_count=262144
 ```
 ### Scheduled auogroup
 
-Autogroup changes how CPU time is distributed. Instead of treating every process equally, the kernel groups processes by terminal session. Each TTY session becomes a group and the scheduler gives equal time to each group — not to each individual process.
+Autogroup changes how CPU time is distributed. Instead of treating every process equally, the kernel groups processes by terminal session. Each TTY session becomes a group and the scheduler gives equal time to each group - not to each individual process.
 
 ```
 cat /usr/local/lib/sysctl.d/99_scheduled_auogroup.conf  << 'EOF'   
