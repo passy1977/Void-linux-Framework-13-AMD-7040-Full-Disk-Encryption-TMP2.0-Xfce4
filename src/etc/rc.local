@@ -4,5 +4,11 @@
 # This is run by runit in stage 2 before the services are executed
 # (see /etc/runit/2).
 
-echo "\033[1m=> Configure cgroup v2\033[m\n"
-sudo sh -c 'echo "+cpu +memory +io +pids" > /sys/fs/cgroup/cgroup.subtree_control'
+#echo "\033[1m=> Configure zram\033[m\n"
+#swapoff /dev/zram0 2>/dev/null
+#mkswap /dev/zram0
+#swapon --priority 100 /dev/zram0
+
+#echo "\033[1m=> Configure cgroup v2\033[m\n"
+#sh -c 'echo "+cpu +memory +io +pids" > /sys/fs/cgroup/cgroup.subtree_control'
+

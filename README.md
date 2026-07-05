@@ -195,9 +195,17 @@ johndoe	ALL=(ALL:ALL) ALL
 
 ```
 cat /etc/rc.conf << 'EOF'   
+#set hw rtc to UTC
 HARDWARECLOCK="UTC"  
+
+#set timezone
 TIMEZONE="Europe/Rome"  
+
+#set keymap 
 KEYMAP="it"
+
+#enable cgroup
+CGROUP_MODE=unified
 'EOF'
 ```
 
@@ -660,14 +668,13 @@ mount_program = "/usr/bin/fuse-overlayfs"
 'EOF
 ```
 
-Configure cgroup v2
+~~Configure cgroup v2~~
 
-```
-sudo tee -a /etc/rc.local "EOF '
-echo "\033[1m=> Configure cgroup v2\033[m\n"
-echo "+cpu +memory +i0 +pids" /sys/fs/cgroup/cgroup. subtree_control
-EOF
-```
+~~sudo tee -a /etc/rc.local "EOF '~~
+~~echo "\033[1m=> Configure cgroup v2\033[m\n"~~
+~~echo "+cpu +memory +i0 +pids" /sys/fs/cgroup/~~cgroup. subtree_control~~
+~~EOF~~
+
 Use crun instead runc
 
 ```
