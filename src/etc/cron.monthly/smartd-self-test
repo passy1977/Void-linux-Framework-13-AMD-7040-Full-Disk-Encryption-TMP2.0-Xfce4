@@ -1,0 +1,3 @@
+#!/bin/sh
+
+/usr/bin/smartctl -t short /dev/nvme0
