@@ -5,9 +5,6 @@
 # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
-# alias ls='ls --color=auto'
-#PS1='[\u@\h \W]\$ '
-
 #####
 
 # set a fancy prompt (non-color, unless we know we "want" color)
@@ -84,7 +81,7 @@ fi
 
 #export QT_AUTO_SCREEN_SCALE_FACTOR=1
 
-export PS1="\[\e[31m\][\[\e[m\]\[\e[38;5;172m\]\u\[\e[m\]@\[\e[38;5;153m\]\h\[\e[m\] \[\e[38;5;214m\]\W\[\e[m\]\[\e[31m\]]\[\e[m\]\\$ "
+export PS1="\[\033[01;32m\][\u@\h]\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ "
 
 unset HISTFILESIZE
 export HISTSIZE=10000
