@@ -88,5 +88,4 @@ export HISTSIZE=10000
 export HISTFILESIZE=10000
 export HISTCONTROL=ignorespace:ignoredups
 export HISTIGNORE="&:ls:ll:exit:[bf]g:history"
-export PATH+=:/home/antoniosalsi/.local/bin
 
