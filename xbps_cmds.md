@@ -70,6 +70,11 @@ xbps-query -m
 xbps-query -f package_name
 ```
 
+## Show package dependencies
+```sh
+xbps-query -rd package_name
+```
+
 ## Show which package the file is contained in
 ```sh
 xbps-query -o /path/of/file
