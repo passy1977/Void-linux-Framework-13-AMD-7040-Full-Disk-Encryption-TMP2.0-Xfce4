@@ -37,9 +37,8 @@ This implementation provides automatic LUKS disk encryption unlock using TPM2 (T
 
 - **Distribution**: Void Linux
 - **Init System**: runit
-- **Kernel**: 6.18.7_1 / 6.18.8_1
 - **Boot Manager**: GRUB
-- **Encryption**: LUKS1 (root), LUKS2 (home)
+- **Encryption**: LUKS2 (root), LUKS2 (home)
 
 ---
 
