@@ -72,25 +72,25 @@ Implement a **custom dracut module** that:
 ┌─────────────────────────────────────────────────────────┐
 │                    Boot Process                         │
 ├─────────────────────────────────────────────────────────┤
-│ GRUB → Kernel → Initramfs                              │
+│ GRUB → Kernel → Initramfs                               │
 │                     ↓                                   │
 │         udev triggers device detection                  │
 │                     ↓                                   │
-│         initqueue/settled/60-tpm2-unlock.sh            │
+│         initqueue/settled/60-tpm2-unlock.sh             │
 │                     ↓                                   │
-│         /usr/local/libexec/tpm2-unseal                 │
+│         /usr/local/libexec/tpm2-unseal                  │
 │                     ↓                                   │
-│    ┌────────────────┴────────────────┐                 │
-│    │  For each LUKS device:          │                 │
-│    │  1. Load TPM2 primary key       │                 │
-│    │  2. Load sealed object          │                 │
-│    │  3. Unseal keyfile with PCR     │                 │
-│    │  4. Unlock with cryptsetup      │                 │
-│    └────────────────┬────────────────┘                 │
+│    ┌────────────────┴────────────────┐                  │
+│    │  For each LUKS device:          │                  │
+│    │  1. Load TPM2 primary key       │                  │
+│    │  2. Load sealed object          │                  │
+│    │  3. Unseal keyfile with PCR     │                  │
+│    │  4. Unlock with cryptsetup      │                  │
+│    └────────────────┬────────────────┘                  │
 │                     ↓                                   │
 │         Root filesystem mounted                         │
 │                     ↓                                   │
-│         switch_root → runit stage 1                    │
+│         switch_root → runit stage 1                     │
 └─────────────────────────────────────────────────────────┘
 ```
 
