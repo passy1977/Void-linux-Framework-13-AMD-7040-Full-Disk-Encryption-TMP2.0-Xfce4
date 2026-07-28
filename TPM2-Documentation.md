@@ -453,8 +453,8 @@ sudo bash setup-tpm2-keyfile.sh
       │ 1. Verify TPM device        │
       │ 2. Create primary key       │
       │ 3. Load sealed objects      │
-      │ 4. Unseal keyfiles         │
-      │ 5. Unlock LUKS devices     │
+      │ 4. Unseal keyfiles          │
+      │ 5. Unlock LUKS devices      │
       └─────────────┬───────────────┘
                     ↓
 [8s] /dev/mapper/root available
