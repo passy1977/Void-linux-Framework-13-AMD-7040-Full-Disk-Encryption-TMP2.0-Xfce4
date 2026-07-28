@@ -709,8 +709,8 @@ To return to password-only:
 
 ```bash
 # Remove LUKS keyfile slots
-sudo cryptsetup luksKillSlot /dev/nvme0n1p2 2
-sudo cryptsetup luksKillSlot /dev/nvme0n1p3 2
+sudo cryptsetup luksKillSlot /dev/nvme0n1p2 1
+sudo cryptsetup luksKillSlot /dev/nvme0n1p3 1
 
 # Remove TPM2 files
 sudo rm -rf /usr/local/etc/tpm2/
