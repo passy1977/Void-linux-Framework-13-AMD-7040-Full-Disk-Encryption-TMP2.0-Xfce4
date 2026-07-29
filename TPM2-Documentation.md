@@ -10,13 +10,14 @@
 2. [Problem Statement](#problem-statement)
 3. [Solution Architecture](#solution-architecture)
 4. [Prerequisites](#prerequisites)
-5. [Implementation](#implementation)
-6. [Scripts Created](#scripts-created)
-7. [Boot Process](#boot-process)
-8. [Testing & Verification](#testing--verification)
-9. [Troubleshooting](#troubleshooting)
-10. [Maintenance](#maintenance)
-11. [Security Considerations](#security-considerations)
+5. [Quick Start / Installation](#quick-start--installation)
+6. [Implementation](#implementation)
+7. [Scripts Created](#scripts-created)
+8. [Boot Process](#boot-process)
+9. [Testing & Verification](#testing--verification)
+10. [Troubleshooting](#troubleshooting)
+11. [Maintenance](#maintenance)
+12. [Security Considerations](#security-considerations)
 
 ---
 
@@ -154,6 +155,98 @@ System must have LUKS-encrypted partitions:
 
 ---
 
+## Quick Start / Installation
+
+This is the practical "how do I actually use this" walkthrough. For what
+each step does internally, see [Implementation](#implementation).
+
+### 1. Copy the script
+
+`scripts/setup-tpm2-keyfile.sh` in this repo is a **template** (placeholder
+UUIDs, safe to keep in version control). Install your own copy outside the
+repo, e.g. in `/usr/local/bin/`:
+
+```bash
+sudo cp scripts/setup-tpm2-keyfile.sh /usr/local/bin/setup-tpm2-keyfile.sh
+sudo chmod 700 /usr/local/bin/setup-tpm2-keyfile.sh
+```
+
+`700` rather than `755`: once you fill in your real UUIDs the script is
+host-specific and should not be world-readable.
+
+### 2. Find your partition UUIDs
+
+```bash
+sudo blkid | grep crypto_LUKS
+```
+
+Match each `crypto_LUKS` line to its mountpoint (root `/`, home `/home`),
+e.g.:
+
+```
+/dev/nvme0n1p2: UUID="215b0812-6b31-4886-88b4-1b61fbe4d9ca" TYPE="crypto_LUKS"
+/dev/nvme0n1p3: UUID="2af3f04d-2968-4185-85d7-a3448a9b7afb" TYPE="crypto_LUKS"
+```
+
+### 3. Edit the copy with your real values
+
+Open `/usr/local/bin/setup-tpm2-keyfile.sh` and edit the four variables near
+the top of the file:
+
+```bash
+ROOT_UUID="215b0812-6b31-4886-88b4-1b61fbe4d9ca"   # was xxxxxxxx-xxxx-...
+HOME_UUID="2af3f04d-2968-4185-85d7-a3448a9b7afb"   # was yyyyyyyy-yyyy-...
+ROOT_DEV="/dev/nvme0n1p2"
+HOME_DEV="/dev/nvme0n1p3"
+```
+
+- `ROOT_UUID`/`HOME_UUID` must be the **LUKS container's** UUID (the
+  `crypto_LUKS` UUID from `blkid` on the raw partition), not the filesystem
+  UUID inside the unlocked `/dev/mapper/...` device.
+- `ROOT_DEV`/`HOME_DEV` are the raw block devices, used only to read the
+  *existing* password when adding the TPM keyslot (script step `[7/9]`) —
+  not `/dev/mapper/root` or `/dev/mapper/home`.
+- If your keyslot layout needs a different reserved slot than the default,
+  also edit `TPM_KEY_SLOT` — see [LUKS Slots](#luks-slots).
+
+The script refuses to run (exit 1) if `ROOT_UUID`/`HOME_UUID` are still the
+template placeholders, so this step cannot be silently skipped.
+
+### 4. Run it
+
+```bash
+sudo /usr/local/bin/setup-tpm2-keyfile.sh
+```
+
+You'll be prompted for the **existing** LUKS password of root and home —
+this only authorizes adding the new TPM-sealed key into `TPM_KEY_SLOT`
+(default slot `1`); your original password in slot `0` is left untouched.
+
+### 5. Regenerate the initramfs and reboot
+
+The script edits files on disk but does **not** rebuild the initramfs
+itself — skipping this step means the running system keeps booting with
+whatever was baked in before:
+
+```bash
+sudo dracut --force --hostonly
+sudo reboot
+```
+
+On reboot you should see the [expected boot messages](#boot-test) with no
+password prompt.
+
+### Re-running later (BIOS/firmware updates, TPM reset, etc.)
+
+The script is safe to re-run whenever you need to reseal — e.g. after a
+BIOS update resets the TPM (see the [case study](#problem-bios-update-invalidates-tpm-unlock-case-study)).
+It's idempotent: `TPM_KEY_SLOT` is killed and recreated rather than
+accumulating new slots, and `/etc/crypttab` is updated without disturbing
+unrelated entries. Just repeat steps 4-5 — no need to re-copy the script or
+re-edit the UUIDs unless the partitions themselves changed.
+
+---
+
 ## Implementation
 
 ### Step 1: Setup Script
@@ -224,6 +317,15 @@ unseal_and_unlock "home" "UUID-HERE"
 - TPM2 contexts (`.ctx` files) are **not portable** between sessions
 - Must reconstruct from `.pub`/`.priv` each time
 - PCR policy ensures unlock only with correct system state
+- The primary key is recreated with `tpm2_createprimary` on **every boot**
+  instead of shipping a pre-saved `primary.ctx` context blob in the initramfs.
+  A TPM 2.0 primary derived from a fixed hierarchy/template (no unique data)
+  is deterministic — same seed + same template ⇒ same key — so recreating it
+  is free and, critically, **immune to TPM resets** (e.g. a BIOS/firmware
+  update that resets the TPM's reset/restart counter). A saved context blob,
+  by contrast, is tied to that counter and becomes invalid after such a
+  reset — this was the actual root cause of a full lockout after a BIOS
+  update (see [Troubleshooting: BIOS update invalidates TPM unlock](#problem-bios-update-invalidates-tpm-unlock-case-study)).
 
 ### Step 3: Dracut Module
 
@@ -296,6 +398,7 @@ else
 fi
 
 # Wait for block devices
+info "TPM2: Waiting for devices..."
 udevadm settle --timeout=5 2>/dev/null || sleep 2
 
 # Execute unlock script
@@ -315,13 +418,29 @@ fi
 
 ```
 # crypttab: encrypted partitions
-# TPM2 automatic unlock in initramfs
+# TPM2 keyfile automatic unlock in initramfs
 
-root UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx none luks,discard
-home UUID=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy none luks,discard
+# root/home are unlocked by the tpm2-keyfile dracut hook
+# (/usr/local/libexec/tpm2-unseal), not by this file. Kept commented
+# out for reference only; do not uncomment.
+#root UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx none luks,discard
+#home UUID=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy none luks,discard
 ```
 
-**Important**: No keyfile specified (third field is `none`). The unlock happens in initramfs hook.
+**Important**: root/home are kept **commented out** here on purpose. The
+`crypt` dracut module (a dependency of our `tpm2-keyfile` module) parses
+`/etc/crypttab` on its own and, if these entries were active, would try to
+prompt for a password for them independently of — and possibly before —
+our `initqueue/settled` hook, which can produce a spurious/duplicate
+password prompt even when the TPM path is fine. Leaving them commented
+means only our custom hook ever touches these two devices; the standard
+`crypt` module still provides the manual-password fallback via the
+`rd.luks.uuid=` kernel parameters below, independent of crypttab.
+
+The setup script only ever touches its own two commented lines (matched by
+UUID) and never overwrites the rest of the file, so any unrelated
+crypttab entries you already have (e.g. a separate encrypted backup
+volume) are preserved across re-runs.
 
 #### /etc/dracut.conf.d/10-crypt.conf
 
@@ -337,7 +456,16 @@ kernel_cmdline+=" rd.luks.uuid=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy "
 
 # Debug (uncomment if needed)
 #kernel_cmdline+=" rd.debug rd.shell "
+#kernel_cmdline+=" rd.luks.allow-discards "
 ```
+
+Note: `--allow-discards` is passed directly to `cryptsetup open` inside
+`tpm2-unseal` for the TPM-unlocked path, so TRIM works there regardless of
+this kernel parameter. `rd.luks.allow-discards` only affects the manual
+password fallback handled by the standard `crypt` module; it is left
+disabled here as a deliberate, minor security trade-off (discards can leak
+which blocks are in use to an attacker with physical access) — enable it
+if you prefer TRIM support on the fallback path too.
 
 ### Step 5: Generate Initramfs
 
@@ -360,17 +488,19 @@ sudo dracut --force --hostonly --kver 6.18.7_1
 **Location**: `scripts/setup-tpm2-keyfile.sh`
 
 **What it does**:
-1. Verifies TPM2 availability
-2. Creates `/usr/local/etc/tpm2/` directory
-3. Generates random keyfiles (32 bytes each)
-4. Creates TPM2 PCR policy
-5. Creates TPM2 primary object
-6. Seals keyfiles with TPM2
-7. Tests unseal operation
-8. Adds keyfiles to LUKS slots (requires password)
-9. Creates unlock script
-10. Creates dracut module
-11. Configures system files
+1. Refuses to run if `ROOT_UUID`/`HOME_UUID` are still the template's
+   placeholder values (`xxxxxxxx-...`/`yyyyyyyy-...`), pointing at `blkid`
+2. Verifies TPM2 availability
+3. Creates `/usr/local/etc/tpm2/` directory
+4. Generates random keyfiles (32 bytes each)
+5. Creates TPM2 PCR policy
+6. Creates TPM2 primary object
+7. Seals keyfiles with TPM2
+8. Tests unseal operation
+9. Adds keyfiles to LUKS slots (requires password)
+10. Creates unlock script
+11. Creates dracut module
+12. Configures system files
 
 **Usage**:
 ```bash
@@ -380,6 +510,29 @@ sudo bash setup-tpm2-keyfile.sh
 **Prompts for**:
 - LUKS password for root partition
 - LUKS password for home partition
+
+**Fixed LUKS keyslot** (`TPM_KEY_SLOT`, default `1`): the script always
+writes the TPM-sealed key to this same keyslot, killing whatever was
+previously in it first (`cryptsetup luksKillSlot`, ignored if empty) before
+adding the new key with `cryptsetup luksAddKey --key-slot`. Without this,
+every re-run (e.g. after a firmware update forces a reseal) would consume a
+new keyslot instead of replacing the old one. Slot 0 is assumed to hold the
+normal password and must not collide with `TPM_KEY_SLOT`.
+
+`cryptsetup` prints `WARNING: The --key-slot parameter is used for new
+keyslot number.` on this operation — this is expected (it is cryptsetup
+confirming `--key-slot` targets the *new* key, exactly the intended usage
+per its own man page example) and is filtered out of the script's output.
+
+**Non-destructive `/etc/crypttab` update**: the script never truncates the
+file. It only removes lines matching `$ROOT_UUID`/`$HOME_UUID` and the
+explanatory comment block from a previous run of this script (idempotent),
+then appends a fresh copy of both, leaving any other entries (e.g. an
+unrelated encrypted volume) untouched. Earlier versions only de-duplicated
+the UUID lines, not the 3-line explanatory comment above them, so re-running
+the script repeatedly duplicated that comment block — fixed by removing all
+five lines (comment block + both UUID lines) before re-appending them as a
+unit.
 
 ### 2. tpm2-unseal
 
@@ -422,6 +575,10 @@ sudo bash setup-tpm2-keyfile.sh
 
 - **parse-tpm2.sh**: Command-line parsing (minimal)
   - Logs module loading
+  - Generated for structural consistency but **not wired into any hook** —
+    `module-setup.sh` never calls `inst_hook` for it, so it is currently
+    dead code kept for possible future use (e.g. a `tpm2.debug` cmdline
+    flag)
 
 - **tpm2-unlock.sh**: Main hook
   - Executes at `initqueue/settled`
@@ -472,8 +629,6 @@ sudo bash setup-tpm2-keyfile.sh
 ### Hook Execution Order
 
 ```
-cmdline (20-parse-tpm2.sh)
-  ↓
 pre-udev
   ↓
 pre-trigger
@@ -487,7 +642,7 @@ pre-mount
 mount
 ```
 
-**Critical**: `initqueue/settled` runs AFTER devices are ready but BEFORE cryptsetup prompts for password.
+**Critical**: `initqueue/settled` runs AFTER devices are ready but BEFORE cryptsetup prompts for password. A previous revision of this module used `inst_hook cmdline 20 parse-tpm2.sh` + `inst_hook pre-mount 50 tpm2-unlock.sh` instead — `pre-mount` fires too late (after the standard `crypt` module has already started asking for a password in the `initqueue` phase), which reintroduced the manual-password prompt even with everything else configured correctly. See [Troubleshooting: BIOS update invalidates TPM unlock](#problem-bios-update-invalidates-tpm-unlock-case-study).
 
 ---
 
@@ -600,6 +755,56 @@ sudo tpm2_unseal -c /tmp/root.ctx -p pcr:sha256:0,2,7
 sudo bash scripts/setup-tpm2-keyfile.sh
 sudo dracut --force
 ```
+
+### Problem: BIOS update invalidates TPM unlock (case study)
+
+**Trigger**: a BIOS/firmware update reset the TPM. Afterwards the system
+kept asking for the LUKS password, and the boot log showed the TPM unlock
+being retried in a loop, even though the disks eventually did get mounted
+once the password was entered.
+
+Re-running `setup-tpm2-keyfile.sh` (to reseal against the new PCR 0 value)
+did not fix it. Diagnosis, done by comparing the live system against a
+known-good Timeshift snapshot taken before the incident, found **four
+separate regressions**, all in the same generator script:
+
+1. **Placeholder UUIDs never substituted.** The heredocs generating
+   `/usr/local/libexec/tpm2-unseal`, `/etc/dracut.conf.d/10-crypt.conf` and
+   `/etc/crypttab` used quoted delimiters (`<< 'UNSEAL_SCRIPT'`, etc.),
+   which prevents bash from expanding `$ROOT_UUID`/`$HOME_UUID`. The
+   generated files ended up with the literal placeholder text
+   (`xxxxxxxx-xxxx-...`) instead of real UUIDs, so the TPM hook looked for
+   a `/dev/disk/by-uuid/xxxxxxxx-...` device that never existed and failed
+   immediately. **Fix**: substitute the UUIDs with `sed` after the heredoc
+   for the script that has its own runtime variables to protect
+   (`tpm2-unseal`), and simply drop the quotes on heredocs with no such
+   conflict (`dracut.conf.d`, `crypttab`).
+2. **Wrong dracut hook point.** The module had drifted to
+   `inst_hook cmdline 20 parse-tpm2.sh` + `inst_hook pre-mount 50
+   tpm2-unlock.sh`. `pre-mount` runs too late — by the time it fires, the
+   standard `crypt` module has already been asking for a password during
+   `initqueue`. **Fix**: restore `inst_hook initqueue/settled 60
+   tpm2-unlock.sh`, which runs before that prompt.
+3. **`primary.ctx` invalidated by the TPM reset.** The unseal script had
+   drifted to loading a `primary.ctx` context blob pre-saved and shipped in
+   the initramfs. TPM 2.0 context blobs are tied to the TPM's
+   reset/restart counter; a BIOS update that resets the TPM invalidates any
+   blob saved before it. **Fix**: recreate the primary with
+   `tpm2_createprimary` on every boot instead (see [Step 2](#step-2-main-unlock-script)) —
+   deterministic for a fixed template, so it needs no persisted state and
+   survives TPM resets.
+4. **Destructive `/etc/crypttab` regeneration.** The script fully
+   overwrote `/etc/crypttab` on every run, silently deleting unrelated
+   entries (e.g. a separate encrypted backup volume) that happened to
+   already be in the file. **Fix**: make the crypttab update additive/
+   idempotent (see [Step 4](#etccrypttab)).
+
+**Lesson**: after any change to this generator script, diff its output
+against a backup of a boot that is *known* to have worked (a filesystem
+snapshot, a git history, etc.) rather than assuming the "obviously
+correct" version is actually what was last proven on real hardware — three
+of the four regressions above were introduced by well-intentioned but
+untested edits.
 
 ### Problem: Devices not found
 
@@ -822,16 +1027,18 @@ sudo rm /usr/local/etc/tpm2/home.key
 
 Current configuration:
 - **Slot 0**: Original password (keep this!)
-- **Slot 1**: Old Clevis binding (can be removed)
-- **Slot 2**: TPM2 keyfile (active)
+- **Slot `TPM_KEY_SLOT`** (default `1`): TPM2 keyfile — fixed and
+  reserved. `setup-tpm2-keyfile.sh` always kills and recreates this exact
+  slot on every run (see [Scripts Created](#1-setup-tpm2-keyfilesh)), so it
+  never accumulates extra slots across re-runs (e.g. after a BIOS update
+  forces a reseal).
 
-**Best practice**: Always keep at least one password slot for recovery.
-
-```bash
-# Remove old Clevis binding (optional)
-sudo cryptsetup luksKillSlot /dev/nvme0n1p2 1
-sudo cryptsetup luksKillSlot /dev/nvme0n1p3 1
-```
+**Best practice**: Always keep at least one password slot for recovery,
+and make sure `TPM_KEY_SLOT` in the script never collides with it. If you
+previously had a Clevis binding or another leftover slot occupying slot 1,
+the script's `luksKillSlot` step removes it automatically before adding
+the TPM key — check first with `cryptsetup luksDump` if you are not sure
+what a given slot currently holds.
 
 ---
 
@@ -951,9 +1158,27 @@ This implementation provides a **production-ready** TPM2 automatic unlock soluti
 
 This solution was developed specifically for Void Linux with runit. It may be adapted for other non-systemd distributions with similar requirements.
 
+### Changelog
+
+- **v3.2** (July 29, 2026): Added the [Quick Start / Installation](#quick-start--installation)
+  walkthrough (copying the script to `/usr/local/bin`, finding and setting
+  real partition UUIDs, running it, regenerating the initramfs). Fixed a
+  bug where re-running the script repeatedly duplicated the explanatory
+  comment block in `/etc/crypttab` (see [Scripts Created](#1-setup-tpm2-keyfilesh)).
+- **v3.1** (July 27, 2026): Restored `initqueue/settled` hook timing,
+  runtime primary regeneration, and non-destructive `/etc/crypttab`
+  handling after a BIOS-update-triggered TPM reset exposed regressions
+  introduced by an untested edit of the generator script. Added a fixed,
+  reserved LUKS keyslot (`TPM_KEY_SLOT`) so re-running the setup script no
+  longer accumulates keyslots, a startup guard against unfilled placeholder
+  UUIDs, and fixed a heredoc-quoting bug that had left literal placeholder
+  UUIDs in the generated `tpm2-unseal`/`dracut.conf.d`/`crypttab` files.
+  See [Troubleshooting: BIOS update invalidates TPM unlock](#problem-bios-update-invalidates-tpm-unlock-case-study).
+- **v3.0** (February 2, 2026): Initial final documentation.
+
 **Author**: Antonio Salsi <passy.linux@zresa.it>  
-**Date**: February 2, 2026  
-**Version**: 3.0 (Final)  
+**Date**: July 29, 2026 (last updated)  
+**Version**: 3.2  
 **License**: GPL-3  
 
 ---

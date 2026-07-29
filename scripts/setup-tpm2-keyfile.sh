@@ -27,8 +27,20 @@ HOME_UUID="yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
 ROOT_DEV="/dev/nvme0n1p2"
 HOME_DEV="/dev/nvme0n1p3"
 
+# Keyslot reserved exclusively for the TPM2-sealed key (LUKS2 only).
+# Fixed so re-running this script always replaces the same slot instead
+# of consuming a new one each time. Must not collide with the slot used
+# by your normal password (typically slot 0).
+TPM_KEY_SLOT=1
+
 # PCR come Clevis: 0=firmware, 2=bootloader, 7=secure boot
 PCR_SELECTION="sha256:0,2,7"
+
+if [ "$ROOT_UUID" = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" ] || [ "$HOME_UUID" = "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy" ]; then
+    echo -e "${RED}Error: ROOT_UUID/HOME_UUID are still placeholder values.${NC}"
+    echo -e "${RED}Edit this script and set them to your actual partition UUIDs (check with: blkid ${ROOT_DEV} ${HOME_DEV}).${NC}"
+    exit 1
+fi
 
 echo -e "${YELLOW}[1/9] Verifying TPM2...${NC}"
 if ! tpm2_pcrread $PCR_SELECTION >/dev/null 2>&1; then
@@ -118,18 +130,23 @@ fi
 echo ""
 echo -e "${YELLOW}[7/9] Adding keyfiles as LUKS slots...${NC}"
 echo ""
-echo -e "${BLUE}Root partition ($ROOT_DEV):${NC}"
+echo -e "${BLUE}Root partition ($ROOT_DEV), reserved slot $TPM_KEY_SLOT:${NC}"
 read -s -p "Enter existing LUKS password for root: " ROOT_PASS
 echo ""
-echo "$ROOT_PASS" | cryptsetup luksAddKey "$ROOT_DEV" "${TPM2_DIR}/root.key" -
-echo -e "${GREEN}✓ Keyfile added to root${NC}"
+# Free the reserved slot if a previous run left a key there (ignore error if empty)
+echo "$ROOT_PASS" | cryptsetup luksKillSlot "$ROOT_DEV" "$TPM_KEY_SLOT" 2>/dev/null || true
+echo "$ROOT_PASS" | cryptsetup luksAddKey --key-slot "$TPM_KEY_SLOT" "$ROOT_DEV" "${TPM2_DIR}/root.key" - \
+    2> >(grep -v "used for new keyslot number" >&2)
+echo -e "${GREEN}✓ Keyfile added to root (slot $TPM_KEY_SLOT)${NC}"
 
 echo ""
-echo -e "${BLUE}Home partition ($HOME_DEV):${NC}"
+echo -e "${BLUE}Home partition ($HOME_DEV), reserved slot $TPM_KEY_SLOT:${NC}"
 read -s -p "Enter existing LUKS password for home: " HOME_PASS
 echo ""
-echo "$HOME_PASS" | cryptsetup luksAddKey "$HOME_DEV" "${TPM2_DIR}/home.key" -
-echo -e "${GREEN}✓ Keyfile added to home${NC}"
+echo "$HOME_PASS" | cryptsetup luksKillSlot "$HOME_DEV" "$TPM_KEY_SLOT" 2>/dev/null || true
+echo "$HOME_PASS" | cryptsetup luksAddKey --key-slot "$TPM_KEY_SLOT" "$HOME_DEV" "${TPM2_DIR}/home.key" - \
+    2> >(grep -v "used for new keyslot number" >&2)
+echo -e "${GREEN}✓ Keyfile added to home (slot $TPM_KEY_SLOT)${NC}"
 
 echo ""
 echo -e "${YELLOW}[8/9] Creating unseal script for initramfs...${NC}"
@@ -139,12 +156,10 @@ mkdir -p /usr/local/libexec
 cat > /usr/local/libexec/tpm2-unseal << 'UNSEAL_SCRIPT'
 #!/bin/sh
 # TPM2 unseal script for initramfs
-# Unseals keyfiles and unlocks LUKS devices
 
 TPM2_DIR="/usr/local/etc/tpm2"
 PCR_SELECTION="sha256:0,2,7"
 
-# Logger functions
 log_info() {
     echo "TPM2-UNSEAL: $*" >&2
 }
@@ -153,60 +168,100 @@ log_error() {
     echo "TPM2-UNSEAL ERROR: $*" >&2
 }
 
-# Unseals and unlocks a device
 unseal_and_unlock() {
     local name="$1"
     local uuid="$2"
-    local ctx_file="${TPM2_DIR}/${name}.ctx"
-    
-    log_info "Processing $name (UUID=$uuid)..."
-    
-    # Find device
+    local keyfile="/tmp/tpm2-${name}.key"
+
+    log_info "Processing $name (UUID=$uuid)"
+
     local device="/dev/disk/by-uuid/$uuid"
     if [ ! -b "$device" ]; then
         log_error "Device $device not found"
         return 1
     fi
-    
-    # Check if already open
+
     if [ -e "/dev/mapper/$name" ]; then
         log_info "$name already unlocked"
         return 0
     fi
-    
-    # Unseal keyfile
-    log_info "Unsealing keyfile for $name..."
-    if ! tpm2_unseal -c "$ctx_file" -p pcr:$PCR_SELECTION 2>/dev/null | \
-         cryptsetup open --allow-discards --type luks "$device" "$name" 2>/dev/null; then
-        log_error "Unable to unlock $name with TPM2"
+
+    # Recreate the primary object at every boot: it is derived deterministically
+    # from the TPM's fixed storage seed + this template, so it is immune to
+    # TPM resets (e.g. a BIOS update) that would invalidate a saved context blob.
+    log_info "Loading primary context"
+    if ! tpm2_createprimary -C o -g sha256 -G rsa -c /tmp/primary.ctx >/dev/null 2>&1; then
+        log_error "Primary creation failed"
         return 1
     fi
-    
+
+    log_info "Loading object from pub/priv"
+    if ! tpm2_load -C /tmp/primary.ctx \
+        -u "${TPM2_DIR}/${name}.pub" \
+        -r "${TPM2_DIR}/${name}.priv" \
+        -c "/tmp/${name}.ctx" >/dev/null 2>&1; then
+        log_error "Object load failed"
+        return 1
+    fi
+
+    log_info "Unsealing keyfile"
+    if ! tpm2_unseal -c "/tmp/${name}.ctx" -p pcr:$PCR_SELECTION > "$keyfile" 2>&1; then
+        log_error "tpm2_unseal failed"
+        cat "$keyfile" >&2
+        rm -f "$keyfile"
+        return 1
+    fi
+
+    if [ ! -s "$keyfile" ]; then
+        log_error "Keyfile is empty"
+        rm -f "$keyfile"
+        return 1
+    fi
+
+    log_info "Keyfile OK, unlocking $device"
+
+    if ! cryptsetup open --allow-discards --type luks --key-file "$keyfile" "$device" "$name" 2>&1; then
+        log_error "cryptsetup open failed"
+        rm -f "$keyfile"
+        return 1
+    fi
+
+    rm -f "$keyfile" "/tmp/${name}.ctx"
     log_info "$name unlocked successfully"
     return 0
 }
 
-# Main
-log_info "Starting LUKS unlock with TPM2"
+log_info "=== Starting LUKS unlock with TPM2 ==="
 
-# Wait for devices
-sleep 1
-
-# Unlock root
-if ! unseal_and_unlock "root" "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"; then
-    log_error "Fallback to manual password for root"
+if [ ! -c /dev/tpm0 ] && [ ! -c /dev/tpmrm0 ]; then
+    log_error "TPM device not found"
     exit 1
 fi
 
-# Unlock home
-if ! unseal_and_unlock "home" "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"; then
-    log_error "Fallback to manual password for home"
-    # Don't exit, home might not be critical
+log_info "TPM device available"
+sleep 2
+
+if ! unseal_and_unlock "root" "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"; then
+    log_error "Root unlock failed - manual password required"
+    exit 1
 fi
 
-log_info "Unlock completed"
+if ! unseal_and_unlock "home" "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"; then
+    log_error "Home unlock failed - manual password required"
+fi
+
+rm -f /tmp/primary.ctx
+
+log_info "=== TPM2 unlock completed ==="
 exit 0
 UNSEAL_SCRIPT
+
+# The heredoc above is quoted to protect the script's own runtime variables
+# ($name, $uuid, $*, ...) from expansion here; substitute the real UUIDs now.
+sed -i \
+    -e "s/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/${ROOT_UUID}/g" \
+    -e "s/yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy/${HOME_UUID}/g" \
+    /usr/local/libexec/tpm2-unseal
 
 chmod +x /usr/local/libexec/tpm2-unseal
 echo -e "${BLUE}✓ Script created: /usr/local/libexec/tpm2-unseal${NC}"
@@ -232,9 +287,9 @@ depends() {
 }
 
 install() {
-    inst_hook cmdline 20 "$moddir/parse-tpm2.sh"
-    inst_hook pre-mount 50 "$moddir/tpm2-unlock.sh"
-    
+    # initqueue/settled runs BEFORE the standard crypt module's password prompt
+    inst_hook initqueue/settled 60 "$moddir/tpm2-unlock.sh"
+
     inst_multiple tpm2_unseal tpm2_load tpm2_createprimary tpm2_pcrread tpm2_flushcontext
     inst_multiple cryptsetup
     
@@ -267,19 +322,31 @@ PARSE_TPM2
 
 cat > "$DRACUT_MOD_DIR/tpm2-unlock.sh" << 'TPM2_UNLOCK'
 #!/bin/sh
-# Pre-mount hook for TPM2 unlock
+# Hook: initqueue/settled
 command -v getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
 
-info "TPM2: Executing LUKS unlock"
+info "TPM2: Hook initqueue/settled executed"
 
-# Wait for devices
-udevadm settle --timeout=10 2>/dev/null || sleep 2
-
-# Execute unlock
-if /usr/local/libexec/tpm2-unseal; then
-    info "TPM2: Unlock succeeded"
+# Verify TPM device available
+if [ -c /dev/tpm0 ] || [ -c /dev/tpmrm0 ]; then
+    info "TPM2: TPM device found"
 else
-    warn "TPM2: Unlock failed, manual password required"
+    warn "TPM2: TPM device not available"
+    return 0
+fi
+
+# Wait for block devices
+info "TPM2: Waiting for devices..."
+udevadm settle --timeout=5 2>/dev/null || sleep 2
+
+# Execute unlock script
+info "TPM2: Executing /usr/local/libexec/tpm2-unseal"
+if /usr/local/libexec/tpm2-unseal 2>&1 | while read -r line; do
+    info "$line"
+done; then
+    info "TPM2: Unlock completed"
+else
+    warn "TPM2: Unlock failed, password required"
 fi
 TPM2_UNLOCK
 
@@ -290,33 +357,50 @@ chmod +x "$DRACUT_MOD_DIR/tpm2-unlock.sh"
 echo -e "${BLUE}✓ Dracut module created: $DRACUT_MOD_DIR${NC}"
 
 # Configure dracut.conf
-cat > /etc/dracut.conf.d/10-crypt.conf << 'DRACUT_CONF'
+cat > /etc/dracut.conf.d/10-crypt.conf << DRACUT_CONF
 # LUKS configuration with TPM2 keyfile for Void Linux/runit
 add_drivers+=" dm_crypt tpm tpm_tis tpm_crb "
 add_dracutmodules+=" crypt tpm2-keyfile "
 
 # Kernel parameters
 kernel_cmdline+=" rd.luks=1 "
-kernel_cmdline+=" rd.luks.uuid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx "
-kernel_cmdline+=" rd.luks.uuid=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy "
+kernel_cmdline+=" rd.luks.uuid=${ROOT_UUID} "
+kernel_cmdline+=" rd.luks.uuid=${HOME_UUID} "
 
 # Debug (uncomment if needed)
 #kernel_cmdline+=" rd.debug rd.shell "
-kernel_cmdline+=" rd.luks.allow-discards "
+#kernel_cmdline+=" rd.luks.allow-discards "
 DRACUT_CONF
 
 echo -e "${BLUE}✓ Dracut configured${NC}"
 
-# Update crypttab
-cat > /etc/crypttab << 'CRYPTTAB'
-# crypttab: encrypted partitions
-# TPM2 keyfile automatic unlock in initramfs
+# Update crypttab without clobbering existing unrelated entries.
+# root/home are unlocked directly by the tpm2-keyfile dracut hook (not via
+# crypttab), so they are kept commented here as documentation only.
+touch /etc/crypttab
+sed -i -E \
+    -e "/UUID=${ROOT_UUID}([[:space:]]|\$)/d" \
+    -e "/UUID=${HOME_UUID}([[:space:]]|\$)/d" \
+    -e '/^# root\/home are unlocked by the tpm2-keyfile dracut hook$/d' \
+    -e '/^# \(\/usr\/local\/libexec\/tpm2-unseal\), not by this file\. Kept commented$/d' \
+    -e '/^# out for reference only; do not uncomment\.$/d' \
+    /etc/crypttab
+if ! grep -q "TPM2 keyfile automatic unlock in initramfs" /etc/crypttab; then
+    {
+        echo "# crypttab: encrypted partitions"
+        echo "# TPM2 keyfile automatic unlock in initramfs"
+        echo ""
+    } >> /etc/crypttab
+fi
+{
+    echo "# root/home are unlocked by the tpm2-keyfile dracut hook"
+    echo "# (/usr/local/libexec/tpm2-unseal), not by this file. Kept commented"
+    echo "# out for reference only; do not uncomment."
+    echo "#root UUID=${ROOT_UUID} none luks,discard"
+    echo "#home UUID=${HOME_UUID} none luks,discard"
+} >> /etc/crypttab
 
-root UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx none luks,discard
-home UUID=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy none luks,discard
-CRYPTTAB
-
-echo -e "${BLUE}✓ Crypttab updated${NC}"
+echo -e "${BLUE}✓ Crypttab updated (existing entries preserved)${NC}"
 
 echo ""
 echo -e "${GREEN}╔═══════════════════════════════════════════════════════╗${NC}"
