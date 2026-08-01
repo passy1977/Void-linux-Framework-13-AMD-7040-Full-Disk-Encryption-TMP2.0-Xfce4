@@ -388,7 +388,7 @@ mcedit /etc/default/grub
 modify:  
 ~~GRUB_CMDLINE_LINUX_DEFAULT="rd.luks.uuid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx root=/dev/mapper/root  rd.luks.uuid=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy home=/dev/mapper/home lsm=landlock,lockdown,yama,integrity,apparmor,bpf acpi_osi="!Windows 2000" nowatchdog net.ifnames=0 apparmor=1 security=apparmor rw quiet rd.vconsole.keymap=it rd.retry=10 rd.luks.allow-discards resume=UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx resume_offset=zzzzz zswap.enabled=1 zswap.compressor=lz4 loglevel=4"~~
 ```
-GRUB_CMDLINE_LINUX_DEFAULT="rd.luks.uuid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx root=/dev/mapper/root  rd.luks.uuid=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy home=/dev/mapper/home lsm=landlock,lockdown,yama,integrity,apparmor,bpf nowatchdog net.ifnames=0 apparmor=1 security=apparmor rw rd.vconsole.keymap=it rd.retry=10 rd.luks.allow-discards resume=UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx resume_offset=zzzzz zswap.enabled=1 zswap.compressor=lz4 loglevel=6 acpi=on"
+GRUB_CMDLINE_LINUX_DEFAULT="rd.luks.uuid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx root=/dev/mapper/root  rd.luks.uuid=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy home=/dev/mapper/home lsm=landlock,lockdown,yama,integrity,apparmor,bpf nowatchdog net.ifnames=0 apparmor=1 security=apparmor rw rd.vconsole.keymap=it rd.retry=10 rd.luks.allow-discards resume=UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx resume_offset=zzzzz zswap.enabled=1 zswap.compressor=lz4 quiet acpi=on"
 ```
 
 ### Configure dracut
@@ -491,7 +491,7 @@ ENV{ID_FS_USAGE}=="filesystem|other|crypto", ENV{UDISKS_FILESYSTEM_SHARED}="1"
 ### Swappiness
 ```
 cat /usr/local/lib/sysctl.d/99_swappiness.conf  << 'EOF'   
-vm.swappiness=10
+vm.swappiness=90
 vm.page-cluster=1
 'EOF'
 ```
