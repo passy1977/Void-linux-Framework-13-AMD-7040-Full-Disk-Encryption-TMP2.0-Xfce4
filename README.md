@@ -804,15 +804,17 @@ driver = "overlay"
 
 [storage.options.overlay]
 mount_program = "/usr/bin/fuse-overlayfs"
-'EOF
+'EOF'
 ```
 
-~~Configure cgroup v2~~
+Configure cgroup v2
 
-~~sudo tee -a /etc/rc.local "EOF '~~
-~~echo "\033[1m=> Configure cgroup v2\033[m\n"~~
-~~echo "+cpu +memory +i0 +pids" /sys/fs/cgroup/~~cgroup. subtree_control~~
-~~EOF~~
+```
+cat  /etc/rc.local << 'EOF'  
+echo "\033[1m=> Configure cgroup v2\033[m\n"
+echo "+cpu +memory +io +pids" > /sys/fs/cgroup/cgroup.subtree_control
+'EOF'
+```
 
 Use crun instead runc
 

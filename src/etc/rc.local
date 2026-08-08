@@ -9,6 +9,6 @@
 #mkswap /dev/zram0
 #swapon --priority 100 /dev/zram0
 
-#echo "\033[1m=> Configure cgroup v2\033[m\n"
-#sh -c 'echo "+cpu +memory +io +pids" > /sys/fs/cgroup/cgroup.subtree_control'
+echo "\033[1m=> Configure cgroup v2\033[m\n"
+echo "+cpu +memory +io +pids" > /sys/fs/cgroup/cgroup.subtree_control
 
