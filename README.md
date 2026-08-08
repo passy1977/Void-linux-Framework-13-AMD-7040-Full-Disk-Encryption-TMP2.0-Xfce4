@@ -1,4 +1,4 @@
-# Void linux + Framework 13 AMD 7040 + Full Disk Encryption + TMP2.0 + Xfce4
+# Void linux + Framework 13 AMD 7040 + Full Disk Encryption + TMP2.0 + XFce4
 
 ## Hardware
 
@@ -23,7 +23,7 @@ All configuration and file modified are in src folder
 
 Set correct keyboard layout
 
-# Open XFCE4-terminal
+# Open Xfce4-terminal
 
 ```
 sudo -i bash
@@ -689,7 +689,7 @@ xbps-install -Su bluez bluez-alsa
 ln -s /etc/sv/bluetoothd /var/service
 ```
 
-### Install XFCE4
+### Install Xfce4
 
 ```
 cat /etc/xbps.d/xfce4.conf << 'EOF'   
