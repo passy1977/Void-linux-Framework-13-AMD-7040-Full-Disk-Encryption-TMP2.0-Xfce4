@@ -3,7 +3,7 @@
 ## Hardware
 
 - Framework 13
-- AMD Ryzen 7 7840U
+- AMD Ryzen 7 7840U (_bios 3.20_)
 - 16GB RAM
 - 1Tb SSD
 - Dongle usb-c with ETH
