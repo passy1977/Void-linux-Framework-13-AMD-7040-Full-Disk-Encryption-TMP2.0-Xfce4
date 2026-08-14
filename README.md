@@ -184,7 +184,7 @@ xbps-reconfigure -f glibc-locales
 
 
 ```
-cat /etc/skel/.bashrc << 'EOF'  
+cat /etc/skel/.bashrc << EOF  
 #
 # ~/.bashrc
 #
@@ -278,9 +278,9 @@ export HISTSIZE=10000
 export HISTFILESIZE=10000
 export HISTCONTROL=ignorespace:ignoredups
 export HISTIGNORE="&:ls:ll:exit:[bf]g:history"
-'EOF'
+EOF
 
-cat /etc/skel/.profile << 'EOF'  
+cat /etc/skel/.profile << EOF  
 # ~/.profile: executed by the command interpreter for login shells.
 # This file is not read by bash(1), if ~/.bash_profile or ~/.bash_login
 # exists.
@@ -308,20 +308,21 @@ fi
 if [ -d "$HOME/.local/bin" ] ; then
     PATH="$HOME/.local/bin:$PATH"
 fi
-'EOF'
+EOF
 
 useradd -mG wheel,lp,audio,video,optical,storage,dbus,input,plugdev,polkitd johndoe  
 passwd johndoe
 
-cat /etc/sudoers.d/johndoe << 'EOF'  
+touch /etc/sudoers.d/johndoe 
+cat /etc/sudoers.d/johndoe << EOF  
 johndoe	ALL=(ALL:ALL) ALL
-'EOF'
+EOF
 ```
 
 ### Configure regional variable
 
 ```
-cat /etc/rc.conf << 'EOF'   
+cat /etc/rc.conf << EOF   
 #set hw rtc to UTC
 HARDWARECLOCK="UTC"  
 
@@ -333,7 +334,7 @@ KEYMAP="it"
 
 #enable cgroup
 CGROUP_MODE=unified
-'EOF'
+EOF
 ```
 
 ### Create volume key
@@ -360,21 +361,21 @@ UUID_HOME_PARTITION=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
 ### Define crypttab
 
 ```
-cat /etc/crypttab << 'EOF'  
+cat /etc/crypttab << EOF  
 root UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx /boot/volume.key luks,discard  
 home UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx /boot/volume.key luks,discard
-'EOF'
+EOF
 ```
 
 ### Configure NetworkManager
 
 ```
-cat /etc/NetworkManager/NetworkManager.conf  << 'EOF'   
+cat /etc/NetworkManager/NetworkManager.conf  << EOF   
 [main]
 plugins=keyfile
 dns=default
 rc-manager=resolvconf
-'EOF'
+EOF
 
 ln -s /etc/sv/NetworkManager /var/service
 ```
@@ -423,10 +424,10 @@ echo 'repository=https://voidlinux.mirror.garr.it/current' > /etc/xbps.d/10-repo
 ### Remove unused firmware
 
 ```
-cat /etc/xbps.d/linux-firmware.conf  << 'EOF'   
+cat /etc/xbps.d/linux-firmware.conf  << EOF   
 ignorepkg=linux-firmware-intel  
 ignorepkg=linux-firmware-nvidia
-'EOF'
+EOF
 
 xbps-remove -Ry linux-firmware-intel   
 xbps-remove -Ry linux-firmware-nvidia  
@@ -490,18 +491,18 @@ ENV{ID_FS_USAGE}=="filesystem|other|crypto", ENV{UDISKS_FILESYSTEM_SHARED}="1"
 
 ### Swappiness
 ```
-cat /usr/local/lib/sysctl.d/99_swappiness.conf  << 'EOF'   
+cat /usr/local/lib/sysctl.d/99_swappiness.conf  << EOF   
 vm.swappiness=90
 vm.page-cluster=1
-'EOF'
+EOF
 ```
 
 ### Read ahead
 When you read a file, the kernel reads extra data beyond what you asked for assuming you will need it next. This is called read-ahead. Measured in kilobytes.  
 ```
-cat /etc/udev/rules.d/99-read-ahead.rules  << 'EOF'   
+cat /etc/udev/rules.d/99-read-ahead.rules  << EOF   
 ACTION=="add|change", KERNEL=="nvme0n1", ATTR{queue/read_ahead_kb}="2048"
-'EOF'
+EOF
 ```
 
 ### Dirty pages
@@ -510,39 +511,39 @@ When you write a file, data goes to a memory buffer first (dirty pages) and is f
 * __vm.dirty_ratio__ — maximum percentage of RAM that can contain dirty data before the kernel blocks new writes and forces a flush. Default is typically 20%.  
 * __vm.dirty_background_ratio__ — percentage at which background flushing begins quietly, without blocking applications.  
 ```
-cat /usr/local/lib/sysctl.d/99_dirty_pages.conf  << 'EOF'   
+cat /usr/local/lib/sysctl.d/99_dirty_pages.conf  << EOF   
 vm.dirty_ratio=10
 vm.dirty_background_ratio=5
-'EOF'
+EOF
 ```
 
 ### Memory mapped
 
 Maximum number of memory-mapped regions a single process is allowed to have. The default is conservative and causes silent failures in some workloads - Proton/Steam games, Elasticsearch, and large Java applications all hit this ceiling.
 ```
-cat /usr/local/lib/sysctl.d/99_memory_mapped.conf  << 'EOF'   
+cat /usr/local/lib/sysctl.d/99_memory_mapped.conf  << EOF   
 vm.max_map_count=262144
-'EOF'
+EOF
 ```
 ### Scheduled auogroup
 
 Autogroup changes how CPU time is distributed. Instead of treating every process equally, the kernel groups processes by terminal session. Each TTY session becomes a group and the scheduler gives equal time to each group - not to each individual process.
 
 ```
-cat /usr/local/lib/sysctl.d/99_scheduled_auogroup.conf  << 'EOF'   
+cat /usr/local/lib/sysctl.d/99_scheduled_auogroup.conf  << EOF   
 kernel.sched_autogroup_enabled=0
-'EOF'
+EOF
 ```
 
 ### FSTrim nvme
 
 ```
-cat /etc/cron.weekly/fstrim << 'EOF'   
+cat /etc/cron.weekly/fstrim << EOF   
 #!/bin/bash  
 fstrim / 2>/dev/null || true   
 fstrim /boot 2>/dev/null || true   
 fstrim /home 2>/dev/null || true
-'EOF'
+EOF
 
 chmod +x /etc/cron.weekly/fstrim
 ```
@@ -574,11 +575,11 @@ DEVICESCAN -H -l error -l selftest -m root -M exec /usr/local/bin/smartnotify
 
 Enable monthly nmve self test
 ```
-cat /etc/cron.monthly/smartd-self-test << 'EOF'   
+cat /etc/cron.monthly/smartd-self-test << EOF   
 #!/bin/sh
 
 /usr/bin/smartctl -t short /dev/nvme0
-'EOF'
+EOF
 
 chmod +x /etc/cron.monthly/smartd-self-test
 ```
@@ -586,7 +587,7 @@ chmod +x /etc/cron.monthly/smartd-self-test
 ### Create script for check runit status
 
 ```
-cat /usr/local/bin/sv_ls << 'EOF'   
+cat /usr/local/bin/sv_ls << EOF   
 #!/bin/bash
 
 USE_COLOR=true
@@ -658,7 +659,7 @@ sudo sv status /var/service/* | while IFS= read -r line; do
     printf "${GREEN}%-40s %-10s %-10s${NC}\n" "$service_name" "$pid" "$uptime"
 done
 
-'EOF'
+EOF
 chmod o+x /usr/local/bin/sv_ls
 ```
 
@@ -692,14 +693,14 @@ ln -s /etc/sv/bluetoothd /var/service
 ### Install Xfce4
 
 ```
-cat /etc/xbps.d/xfce4.conf << 'EOF'   
+cat /etc/xbps.d/xfce4.conf << EOF   
 ignorepkg=mousepad  
 ignorepkg=ristretto  
 ignorepkg=parole  
 ignorepkg=xfce4-taskmanager  
 ignorepkg=ffplay6  
 ignorepkg=tumbler
-'EOF'
+EOF
 
 xbps-install vulkan-loader amdvlk mesa-vaapi mesa-vdpau xorg-minimal xf86-video-amdgpu xterm xorg-fonts xfce4 catfish xfce-polkit xfce4-pulseaudio-plugin xfce4-whiskermenu-plugin pavucontrol pulseaudio gvfs-smb lightdm lightdm-gtk3-greeter xdg-desktop-portal-gtk 
 ```
@@ -758,7 +759,7 @@ something like that:
 In this case I force Italian keyboard layout
 
 ```
-cat /etc/X11/xorg.conf.d/00-keyboard.conf << 'EOF'  
+cat /etc/X11/xorg.conf.d/00-keyboard.conf << EOF  
 Section "InputClass"  
     Identifier "system-keyboard"  
     MatchIsKeyboard "yes"  
@@ -766,17 +767,17 @@ Section "InputClass"
     Option "XkbModel" "pc105"  
     Option "XkbOptions" "terminate:ctrl_alt_bksp"  
 EndSection  
-'EOF'
+EOF
 ```
 
 ### Podman configuration
 ```
-cat /etc/security/limits.d/johndoe-limits.conf << 'EOF'  
+cat /etc/security/limits.d/johndoe-limits.conf << EOF  
 johndoe soft nofile 65536
 johndoe hard nofile 65536
 johndoe soft memlock unlimited
 johndoe hard memlock unlimited
-'EOF'
+EOF
 ```
 ```
 mcedit /etc/pam.d/lightdm
@@ -798,22 +799,22 @@ session   required pam_limits.so
 Enable efuse overlay
 
 ```
-cat /etc/containers/storage.conf << 'EOF'  
+cat /etc/containers/storage.conf << EOF  
 [storage]
 driver = "overlay"
 
 [storage.options.overlay]
 mount_program = "/usr/bin/fuse-overlayfs"
-'EOF'
+EOF
 ```
 
 Configure cgroup v2
 
 ```
-cat  /etc/rc.local << 'EOF'  
+cat  /etc/rc.local << EOF  
 echo "\033[1m=> Configure cgroup v2\033[m\n"
 echo "+cpu +memory +io +pids" > /sys/fs/cgroup/cgroup.subtree_control
-'EOF'
+EOF
 ```
 
 Use crun instead runc
