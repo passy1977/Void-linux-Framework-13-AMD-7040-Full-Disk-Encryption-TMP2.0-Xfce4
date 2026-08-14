@@ -146,6 +146,19 @@ chown root:root /
 chmod 755 /  
 passwd
 ```
+### Configure NetworkManager
+
+```
+cat /etc/NetworkManager/NetworkManager.conf  << EOF   
+[main]
+plugins=keyfile
+dns=default
+rc-manager=resolvconf
+EOF
+
+ln -s /etc/sv/dbus /var/service
+ln -s /etc/sv/NetworkManager /var/service
+```
 
 ### Set localtime
 
@@ -367,19 +380,6 @@ home UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx /boot/volume.key luks,discard
 EOF
 ```
 
-### Configure NetworkManager
-
-```
-cat /etc/NetworkManager/NetworkManager.conf  << EOF   
-[main]
-plugins=keyfile
-dns=default
-rc-manager=resolvconf
-EOF
-
-ln -s /etc/sv/NetworkManager /var/service
-```
-
 ### Configure grub
 
 ```
@@ -424,6 +424,7 @@ echo 'repository=https://voidlinux.mirror.garr.it/current' > /etc/xbps.d/10-repo
 ### Remove unused firmware
 
 ```
+touch /etc/xbps.d/linux-firmware.conf
 cat /etc/xbps.d/linux-firmware.conf  << EOF   
 ignorepkg=linux-firmware-intel  
 ignorepkg=linux-firmware-nvidia
@@ -439,9 +440,8 @@ elogin don't need to be linked to /var/service because it start with pid 1
 
 ```
 xbps-install -Su   
-xbps-install logrotate cronie ufw smartmontools power-profiles-daemon polkit openntpd elogind dbus apparmor  
-ln -s /etc/sv/crond /var/service  
-ln -s /etc/sv/dbus /var/service  
+xbps-install logrotate cronie ufw smartmontools power-profiles-daemon polkit openntpd elogind apparmor earlyoom socklog-void
+ln -s /etc/sv/crond /var/service    
 ln -s /etc/sv/nanoklogd /var/service  
 ln -s /etc/sv/socklog-unix/ /var/service  
 ln -s /etc/sv/ntpd /var/service  
@@ -451,11 +451,23 @@ ln -s /etc/sv/rtkit /var/service
 ln -s /etc/sv/smartd  /var/service  
 ln -s /etc/sv/udevd  /var/service  
 ln -s /etc/sv/ufw  /var/service
+ln -s /etc/sv/earlyoom/ /var/service
+```
+
+### Enable swap on file
+```
+touch /var/swap.img
+chmod 600 /var/swap.img
+fallocate -l 16G /var/swap.img
+mkswap /var/swap.img
+swapon /var/swap.img
+echo "/var/swap.img none            swap    sw              0       0" >> /etc/fstab
 ```
 
 ### USB Disk defaulf mount
 
 ```
+mkdir -p  /etc/udev/rules.d/
 mcedit /etc/udev/rules.d/99-udisks2.rules
 ```
 
@@ -491,6 +503,8 @@ ENV{ID_FS_USAGE}=="filesystem|other|crypto", ENV{UDISKS_FILESYSTEM_SHARED}="1"
 
 ### Swappiness
 ```
+mkdir -p  /usr/local/lib/sysctl.d/
+touch /usr/local/lib/sysctl.d/99_swappiness.conf
 cat /usr/local/lib/sysctl.d/99_swappiness.conf  << EOF   
 vm.swappiness=90
 vm.page-cluster=1
@@ -500,6 +514,7 @@ EOF
 ### Read ahead
 When you read a file, the kernel reads extra data beyond what you asked for assuming you will need it next. This is called read-ahead. Measured in kilobytes.  
 ```
+touch /etc/udev/rules.d/99-read-ahead.rules 
 cat /etc/udev/rules.d/99-read-ahead.rules  << EOF   
 ACTION=="add|change", KERNEL=="nvme0n1", ATTR{queue/read_ahead_kb}="2048"
 EOF
@@ -511,6 +526,7 @@ When you write a file, data goes to a memory buffer first (dirty pages) and is f
 * __vm.dirty_ratio__ — maximum percentage of RAM that can contain dirty data before the kernel blocks new writes and forces a flush. Default is typically 20%.  
 * __vm.dirty_background_ratio__ — percentage at which background flushing begins quietly, without blocking applications.  
 ```
+touch /usr/local/lib/sysctl.d/99_dirty_pages.conf
 cat /usr/local/lib/sysctl.d/99_dirty_pages.conf  << EOF   
 vm.dirty_ratio=10
 vm.dirty_background_ratio=5
@@ -521,6 +537,7 @@ EOF
 
 Maximum number of memory-mapped regions a single process is allowed to have. The default is conservative and causes silent failures in some workloads - Proton/Steam games, Elasticsearch, and large Java applications all hit this ceiling.
 ```
+touch cat /usr/local/lib/sysctl.d/99_dirty_pages.conf 
 cat /usr/local/lib/sysctl.d/99_memory_mapped.conf  << EOF   
 vm.max_map_count=262144
 EOF
@@ -538,6 +555,7 @@ EOF
 ### FSTrim nvme
 
 ```
+touch /etc/cron.weekly/fstrim 
 cat /etc/cron.weekly/fstrim << EOF   
 #!/bin/bash  
 fstrim / 2>/dev/null || true   
@@ -575,6 +593,7 @@ DEVICESCAN -H -l error -l selftest -m root -M exec /usr/local/bin/smartnotify
 
 Enable monthly nmve self test
 ```
+touch /etc/cron.monthly/smartd-self-test
 cat /etc/cron.monthly/smartd-self-test << EOF   
 #!/bin/sh
 
@@ -587,6 +606,7 @@ chmod +x /etc/cron.monthly/smartd-self-test
 ### Create script for check runit status
 
 ```
+touch /usr/local/bin/sv_ls
 cat /usr/local/bin/sv_ls << EOF   
 #!/bin/bash
 
@@ -693,6 +713,7 @@ ln -s /etc/sv/bluetoothd /var/service
 ### Install Xfce4
 
 ```
+touch /etc/xbps.d/xfce4.conf
 cat /etc/xbps.d/xfce4.conf << EOF   
 ignorepkg=mousepad  
 ignorepkg=ristretto  
@@ -759,6 +780,7 @@ something like that:
 In this case I force Italian keyboard layout
 
 ```
+touch /etc/X11/xorg.conf.d/00-keyboard.conf 
 cat /etc/X11/xorg.conf.d/00-keyboard.conf << EOF  
 Section "InputClass"  
     Identifier "system-keyboard"  
@@ -772,6 +794,7 @@ EOF
 
 ### Podman configuration
 ```
+touch /etc/security/limits.d/johndoe-limits.conf 
 cat /etc/security/limits.d/johndoe-limits.conf << EOF  
 johndoe soft nofile 65536
 johndoe hard nofile 65536
@@ -799,6 +822,7 @@ session   required pam_limits.so
 Enable efuse overlay
 
 ```
+touch /etc/containers/storage.conf
 cat /etc/containers/storage.conf << EOF  
 [storage]
 driver = "overlay"
@@ -807,10 +831,18 @@ driver = "overlay"
 mount_program = "/usr/bin/fuse-overlayfs"
 EOF
 ```
+```
+touch /etc/containers/containers.conf
+cat /etc/containers/containers.conf << EOF  
+[engine]
+runtime = "crun"
+EOF
+```
 
 Configure cgroup v2
 
 ```
+touch /etc/rc.local
 cat  /etc/rc.local << EOF  
 echo "\033[1m=> Configure cgroup v2\033[m\n"
 echo "+cpu +memory +io +pids" > /sys/fs/cgroup/cgroup.subtree_control
@@ -827,6 +859,18 @@ Reboot the system
 ```
 xbps-install -Su podman crun fuse-overlayfs
 ```
+
+Disable from AppArmor Podman profile
+```
+sudo mkdir -p /etc/apparmor.d/disable
+
+sudo ln -s /etc/apparmor.d/crun /etc/apparmor.d/disable/
+sudo ln -s /etc/apparmor.d/podman /etc/apparmor.d/disable/
+
+sudo apparmor_parser -R /etc/apparmor.d/crun
+sudo apparmor_parser -R /etc/apparmor.d/podman
+```
+
 Check the configuration
 ```
 podman info --format '{{.Host.OCIRuntime.Name}}'
