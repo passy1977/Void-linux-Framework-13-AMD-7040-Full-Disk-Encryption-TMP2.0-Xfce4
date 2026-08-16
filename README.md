@@ -537,7 +537,7 @@ EOF
 
 Maximum number of memory-mapped regions a single process is allowed to have. The default is conservative and causes silent failures in some workloads - Proton/Steam games, Elasticsearch, and large Java applications all hit this ceiling.
 ```
-touch cat /usr/local/lib/sysctl.d/99_dirty_pages.conf 
+touch /usr/local/lib/sysctl.d/99_memory_mapped.conf
 cat /usr/local/lib/sysctl.d/99_memory_mapped.conf  << EOF   
 vm.max_map_count=262144
 EOF
@@ -547,6 +547,7 @@ EOF
 Autogroup changes how CPU time is distributed. Instead of treating every process equally, the kernel groups processes by terminal session. Each TTY session becomes a group and the scheduler gives equal time to each group - not to each individual process.
 
 ```
+touch /usr/local/lib/sysctl.d/99_scheduled_auogroup.conf
 cat /usr/local/lib/sysctl.d/99_scheduled_auogroup.conf  << EOF   
 kernel.sched_autogroup_enabled=0
 EOF
