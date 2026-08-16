@@ -149,7 +149,7 @@ passwd
 ### Configure NetworkManager
 
 ```
-cat /etc/NetworkManager/NetworkManager.conf  << EOF   
+tee /etc/NetworkManager/NetworkManager.conf >/dev/null <<'EOF'
 [main]
 plugins=keyfile
 dns=default
@@ -197,7 +197,7 @@ xbps-reconfigure -f glibc-locales
 
 
 ```
-cat /etc/skel/.bashrc << EOF  
+tee /etc/skel/.bashrc >/dev/null <<'EOF'
 #
 # ~/.bashrc
 #
@@ -293,7 +293,7 @@ export HISTCONTROL=ignorespace:ignoredups
 export HISTIGNORE="&:ls:ll:exit:[bf]g:history"
 EOF
 
-cat /etc/skel/.profile << EOF  
+tee /etc/skel/.profile >/dev/null <<'EOF'
 # ~/.profile: executed by the command interpreter for login shells.
 # This file is not read by bash(1), if ~/.bash_profile or ~/.bash_login
 # exists.
@@ -327,7 +327,7 @@ useradd -mG wheel,lp,audio,video,optical,storage,dbus,input,plugdev,polkitd john
 passwd johndoe
 
 touch /etc/sudoers.d/johndoe 
-cat /etc/sudoers.d/johndoe << EOF  
+tee /etc/sudoers.d/johndoe >/dev/null <<'EOF'
 johndoe	ALL=(ALL:ALL) ALL
 EOF
 ```
@@ -335,7 +335,7 @@ EOF
 ### Configure regional variable
 
 ```
-cat /etc/rc.conf << EOF   
+tee /etc/rc.conf >/dev/null <<'EOF'
 #set hw rtc to UTC
 HARDWARECLOCK="UTC"  
 
@@ -374,7 +374,7 @@ UUID_HOME_PARTITION=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
 ### Define crypttab
 
 ```
-cat /etc/crypttab << EOF  
+tee /etc/crypttab >/dev/null <<'EOF'
 root UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx /boot/volume.key luks,discard  
 home UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx /boot/volume.key luks,discard
 EOF
@@ -425,7 +425,7 @@ echo 'repository=https://voidlinux.mirror.garr.it/current' > /etc/xbps.d/10-repo
 
 ```
 touch /etc/xbps.d/linux-firmware.conf
-cat /etc/xbps.d/linux-firmware.conf  << EOF   
+tee /etc/xbps.d/linux-firmware.conf >/dev/null <<'EOF'
 ignorepkg=linux-firmware-intel  
 ignorepkg=linux-firmware-nvidia
 EOF
@@ -505,7 +505,7 @@ ENV{ID_FS_USAGE}=="filesystem|other|crypto", ENV{UDISKS_FILESYSTEM_SHARED}="1"
 ```
 mkdir -p  /usr/local/lib/sysctl.d/
 touch /usr/local/lib/sysctl.d/99_swappiness.conf
-cat /usr/local/lib/sysctl.d/99_swappiness.conf  << EOF   
+tee /usr/local/lib/sysctl.d/99_swappiness.conf >/dev/null <<'EOF'
 vm.swappiness=90
 vm.page-cluster=1
 EOF
@@ -515,7 +515,7 @@ EOF
 When you read a file, the kernel reads extra data beyond what you asked for assuming you will need it next. This is called read-ahead. Measured in kilobytes.  
 ```
 touch /etc/udev/rules.d/99-read-ahead.rules 
-cat /etc/udev/rules.d/99-read-ahead.rules  << EOF   
+tee /etc/udev/rules.d/99-read-ahead.rules >/dev/null <<'EOF'
 ACTION=="add|change", KERNEL=="nvme0n1", ATTR{queue/read_ahead_kb}="2048"
 EOF
 ```
@@ -527,7 +527,7 @@ When you write a file, data goes to a memory buffer first (dirty pages) and is f
 * __vm.dirty_background_ratio__ — percentage at which background flushing begins quietly, without blocking applications.  
 ```
 touch /usr/local/lib/sysctl.d/99_dirty_pages.conf
-cat /usr/local/lib/sysctl.d/99_dirty_pages.conf  << EOF   
+tee /usr/local/lib/sysctl.d/99_dirty_pages.conf >/dev/null <<'EOF'
 vm.dirty_ratio=10
 vm.dirty_background_ratio=5
 EOF
@@ -538,7 +538,7 @@ EOF
 Maximum number of memory-mapped regions a single process is allowed to have. The default is conservative and causes silent failures in some workloads - Proton/Steam games, Elasticsearch, and large Java applications all hit this ceiling.
 ```
 touch /usr/local/lib/sysctl.d/99_memory_mapped.conf
-cat /usr/local/lib/sysctl.d/99_memory_mapped.conf  << EOF   
+tee /usr/local/lib/sysctl.d/99_memory_mapped.conf >/dev/null <<'EOF'
 vm.max_map_count=262144
 EOF
 ```
@@ -548,7 +548,7 @@ Autogroup changes how CPU time is distributed. Instead of treating every process
 
 ```
 touch /usr/local/lib/sysctl.d/99_scheduled_auogroup.conf
-cat /usr/local/lib/sysctl.d/99_scheduled_auogroup.conf  << EOF   
+tee /usr/local/lib/sysctl.d/99_scheduled_auogroup.conf >/dev/null <<'EOF'
 kernel.sched_autogroup_enabled=0
 EOF
 ```
@@ -557,10 +557,10 @@ EOF
 
 ```
 touch /etc/cron.weekly/fstrim 
-cat /etc/cron.weekly/fstrim << EOF   
-#!/bin/bash  
-fstrim / 2>/dev/null || true   
-fstrim /boot 2>/dev/null || true   
+tee /etc/cron.weekly/fstrim >/dev/null <<'EOF'
+#!/bin/bash
+fstrim / 2>/dev/null || true
+fstrim /boot 2>/dev/null || true
 fstrim /home 2>/dev/null || true
 EOF
 
@@ -595,7 +595,7 @@ DEVICESCAN -H -l error -l selftest -m root -M exec /usr/local/bin/smartnotify
 Enable monthly nmve self test
 ```
 touch /etc/cron.monthly/smartd-self-test
-cat /etc/cron.monthly/smartd-self-test << EOF   
+tee /etc/cron.monthly/smartd-self-test >/dev/null <<'EOF'
 #!/bin/sh
 
 /usr/bin/smartctl -t short /dev/nvme0
@@ -608,7 +608,7 @@ chmod +x /etc/cron.monthly/smartd-self-test
 
 ```
 touch /usr/local/bin/sv_ls
-cat /usr/local/bin/sv_ls << EOF   
+tee /usr/local/bin/sv_ls >/dev/null <<'EOF'
 #!/bin/bash
 
 USE_COLOR=true
@@ -715,7 +715,7 @@ ln -s /etc/sv/bluetoothd /var/service
 
 ```
 touch /etc/xbps.d/xfce4.conf
-cat /etc/xbps.d/xfce4.conf << EOF   
+tee /etc/xbps.d/xfce4.conf >/dev/null <<'EOF'
 ignorepkg=mousepad  
 ignorepkg=ristretto  
 ignorepkg=parole  
@@ -782,7 +782,7 @@ In this case I force Italian keyboard layout
 
 ```
 touch /etc/X11/xorg.conf.d/00-keyboard.conf 
-cat /etc/X11/xorg.conf.d/00-keyboard.conf << EOF  
+tee /etc/X11/xorg.conf.d/00-keyboard.conf >/dev/null <<'EOF'
 Section "InputClass"  
     Identifier "system-keyboard"  
     MatchIsKeyboard "yes"  
@@ -796,7 +796,7 @@ EOF
 ### Podman configuration
 ```
 touch /etc/security/limits.d/johndoe-limits.conf 
-cat /etc/security/limits.d/johndoe-limits.conf << EOF  
+tee /etc/security/limits.d/johndoe-limits.conf >/dev/null <<'EOF'
 johndoe soft nofile 65536
 johndoe hard nofile 65536
 johndoe soft memlock unlimited
@@ -824,7 +824,7 @@ Enable efuse overlay
 
 ```
 touch /etc/containers/storage.conf
-cat /etc/containers/storage.conf << EOF  
+tee /etc/containers/storage.conf >/dev/null <<'EOF'
 [storage]
 driver = "overlay"
 
@@ -834,7 +834,7 @@ EOF
 ```
 ```
 touch /etc/containers/containers.conf
-cat /etc/containers/containers.conf << EOF  
+tee /etc/containers/containers.conf >/dev/null <<'EOF'
 [engine]
 runtime = "crun"
 EOF
@@ -844,7 +844,7 @@ Configure cgroup v2
 
 ```
 touch /etc/rc.local
-cat  /etc/rc.local << EOF  
+tee /etc/rc.local >/dev/null <<'EOF'
 echo "\033[1m=> Configure cgroup v2\033[m\n"
 echo "+cpu +memory +io +pids" > /sys/fs/cgroup/cgroup.subtree_control
 EOF
