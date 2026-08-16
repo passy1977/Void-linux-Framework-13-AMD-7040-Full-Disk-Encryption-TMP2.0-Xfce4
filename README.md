@@ -743,11 +743,26 @@ fprintd-enroll johndoe -f left-index-finger
 ```
 
 Insert a row after #@include common-auth or at the beginning of the auth section:  
-auth sufficient pam_fprintd.so for this files:
+auth sufficient pam_fprintd.so  
+for this files:
 
 - /etc/pam.d/lightdm
 - /etc/pam.d/system-auth
 - /etc/pam.d/system-login
+
+### Enable fingerprint on the polkit dialog
+
+The polkit package ships its PAM rules in the vendor directory `/usr/lib/pam.d/polkit-1`, where they call `pam_unix.so` directly and never go through `system-auth`. This is why the polkit authentication dialog keeps asking for the password even after `pam_fprintd.so` has been added above. A file with the same name in `/etc/pam.d` takes precedence over the vendor one:
+
+```
+tee /etc/pam.d/polkit-1 >/dev/null <<'EOF'
+#%PAM-1.0
+auth      include   system-auth
+account   include   system-auth
+password  include   system-auth
+session   include   system-auth
+EOF
+```
 
 ### FIX Aparmor error
 if find into log an erro like that:  
