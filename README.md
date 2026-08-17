@@ -464,6 +464,13 @@ swapon /var/swap.img
 echo "/var/swap.img none            swap    sw              0       0" >> /etc/fstab
 ```
 
+### Set MOTD message
+```
+tee /etc/motd >/dev/null <<'EOF'
+Welcome to Void Linux!
+EOF
+```
+
 ### USB Disk defaulf mount
 
 ```
@@ -804,7 +811,6 @@ apparmor_parser -r /etc/apparmor.d/usr.bin.pulseaudio
 ```
 
 ### Enable restart xorg with ctr + alt + back
-
 In this case I force Italian keyboard layout
 
 ```
