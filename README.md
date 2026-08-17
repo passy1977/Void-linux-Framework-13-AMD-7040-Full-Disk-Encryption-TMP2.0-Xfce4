@@ -791,6 +791,18 @@ something like that:
   ...
 ```
 
+### FIX Aparmor error
+With the installation of appermor 4.1.7 you may experience problems with audio devices connected to the BT. With that you should solve the problem.
+```
+mkdir /etc/apparmor.d/local
+touch /usr/local/etc/apparmor.d/usr.bin.pulseaudio.local
+tee /usr/local/etc/apparmor.d/usr.bin.pulseaudio.local >/dev/null <<'EOF'
+network bluetooth seqpacket,
+network bluetooth stream,
+EOF
+apparmor_parser -r /etc/apparmor.d/usr.bin.pulseaudio 
+```
+
 ### Enable restart xorg with ctr + alt + back
 
 In this case I force Italian keyboard layout
