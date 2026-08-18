@@ -802,11 +802,18 @@ something like that:
 With the installation of appermor 4.1.7 you may experience problems with audio devices connected to the BT. With that you should solve the problem.
 ```
 mkdir /etc/apparmor.d/local
-touch /usr/local/etc/apparmor.d/usr.bin.pulseaudio.local
-tee /usr/local/etc/apparmor.d/usr.bin.pulseaudio.local >/dev/null <<'EOF'
+touch /usr/etc/local/apparmor.d/usr.bin.pulseaudio
+tee /usr/etc/apparmor.d/local/usr.bin.pulseaudio >/dev/null <<'EOF'
 network bluetooth seqpacket,
 network bluetooth stream,
 EOF
+```
+```
+mcedit /etc/apparmor.d/usr.bin.pulseaudio
+```
+before last char _}_ add:   
+include if exists \<local\/usr.bin.pulseaudio\>
+```
 apparmor_parser -r /etc/apparmor.d/usr.bin.pulseaudio 
 ```
 
