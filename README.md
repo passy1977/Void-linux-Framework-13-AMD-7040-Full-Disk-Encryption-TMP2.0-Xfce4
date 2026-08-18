@@ -440,7 +440,7 @@ elogin don't need to be linked to /var/service because it start with pid 1
 
 ```
 xbps-install -Su   
-xbps-install logrotate cronie ufw smartmontools power-profiles-daemon polkit openntpd elogind apparmor earlyoom socklog-void
+xbps-install logrotate cronie ufw smartmontools power-profiles-daemon polkit ntpd-rs elogind apparmor earlyoom socklog-void
 ln -s /etc/sv/crond /var/service    
 ln -s /etc/sv/nanoklogd /var/service  
 ln -s /etc/sv/socklog-unix/ /var/service  
