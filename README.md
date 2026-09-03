@@ -184,7 +184,7 @@ modify:
 
 ```
 echo "LANG=en_GB.UTF-8" > /etc/locale.conf  
-echo "en_US.UTF-8 UTF-8" >> /etc/default/libc-locales
+echo "en_GB.UTF-8 UTF-8" >> /etc/default/libc-locales
 ```
 
 if you need some more complex configuration see [src/etc/locale.conf](src/etc/locale.conf)
