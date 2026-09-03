@@ -478,11 +478,10 @@ EOF
 
 ```
 mkdir -p  /etc/udev/rules.d/
-mcedit /etc/udev/rules.d/99-udisks2.rules
-```
-
-insert:  
+tee /etc/udev/rules.d/99-udisks2.rules >/dev/null <<'EOF'
 ENV{ID_FS_USAGE}=="filesystem|other|crypto", ENV{UDISKS_FILESYSTEM_SHARED}="1"
+EOF
+```
 
 ### ~~Enable zram~~
 
