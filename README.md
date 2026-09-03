@@ -713,22 +713,6 @@ mcedit /set/default/grub
 
 add in tail of GRUB_CMDLINE_LINUX_DEFAULT="... resume=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx resume_offset=43008"
 
-```
-sudo tee /usr/libexec/elogind/system-sleep/disable-zswap-hibernate.sh > /dev/null << 'EOF'
-#!/bin/sh
-case "$1/$2" in
-  pre/hibernate|pre/hybrid-sleep)
-    logger "disable-zswap-hibernate: DISABLING zswap before hibernate"
-    echo 0 > /sys/module/zswap/parameters/enabled
-    ;;
-  post/hibernate|post/hybrid-sleep)
-    logger "disable-zswap-hibernate: RE-ENABLING zswap after hibernate"
-    echo 1 > /sys/module/zswap/parameters/enabled
-    ;;
-esac
-EOF
-sudo chmod +x /usr/libexec/elogind/system-sleep/disable-zswap-hibernate.sh
-```
 
 ### Install bluetooth
 
