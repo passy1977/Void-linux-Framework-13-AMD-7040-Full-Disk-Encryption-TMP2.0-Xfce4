@@ -461,7 +461,7 @@ ln -s /etc/sv/earlyoom/ /var/service
 ```
 touch /var/swap.img
 chmod 600 /var/swap.img
-fallocate -l 16G /var/swap.img
+fallocate -l 20G /var/swap.img
 mkswap /var/swap.img
 swapon /var/swap.img
 echo "/var/swap.img none            swap    sw              0       0" >> /etc/fstab
