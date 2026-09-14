@@ -126,4 +126,13 @@ chpst -u www-data:www-data -c /var/www /usr/bin/php -S 0.0.0.0:8000
 xbps-alternatives --list
 ```
 
+## Rollback pckage
+```sh
+sudo xbps-install --repository=/var/cache/xbps -f <package_name>-<old_version>.x86_64.xbps
+```
+or
+```sh
+sudo xbps-install -f /var/cache/xbps/<package_name>-<old_version>.x86_64.xbps
+```
+
 Many thanks to the [person](https://www.youtube.com/@YouTuxChannel) who encouraged me to install Void Linux and to make this guide starting from one of its contents [Super Mega Ultra Guide to Void Linux](https://www.youtube.com/watch?v=xieN8GWh_QE&list=WL&index=8)
