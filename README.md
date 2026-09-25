@@ -870,9 +870,6 @@ touch /etc/containers/storage.conf
 tee /etc/containers/storage.conf >/dev/null <<'EOF'
 [storage]
 driver = "overlay"
-
-[storage.options.overlay]
-mount_program = "/usr/bin/fuse-overlayfs"
 EOF
 ```
 ```
